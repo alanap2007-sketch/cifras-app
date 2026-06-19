@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { transposeContent, getSemitonesDifference, getAllKeys } from '../utils/transposer'
+import { getCachedSongs } from '../services/cache'
+import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
 
 const SECTION_KEYWORDS = ['intro', 'verso', 'refrão', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pré-refrão', 'pre-refrao', 'interlúdio', 'interludio', 'coro']
 
@@ -28,6 +29,7 @@ export default function Player() {
   const lastTimeRef = useRef(null)
 
   const [ledOn, setLedOn] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
 
   useEffect(() => {
     scrollSpeedRef.current = scrollSpeed
@@ -39,6 +41,17 @@ export default function Player() {
     const timer = setInterval(() => setLedOn(v => !v), interval)
     return () => clearInterval(timer)
   }, [song?.bpm])
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -57,22 +70,44 @@ export default function Player() {
   }, [id])
 
   const fetchSong = async () => {
-    const { data, error } = await supabase.from('songs').select('*').eq('id', id).single()
-    if (error) {
+    try {
+      const { data, error } = await supabase.from('songs').select('*').eq('id', id).single()
+      
+      if (error) {
+        console.log(' Buscando música no cache (offline)...')
+        const cachedSongs = await getCachedSongs()
+        const cachedSong = cachedSongs.find(s => s.id === id)
+        
+        if (cachedSong) {
+          setSong(cachedSong)
+          const origKey = cachedSong.original_key || 'C'
+          setOriginalKey(origKey)
+          setOriginalCapo(cachedSong.original_capo || 0)
+          setSelectedKey(origKey)
+          setCapo(cachedSong.original_capo || 0)
+          setSections(detectSections(cachedSong.content))
+        } else {
+          alert('Música não encontrada. Conecte-se à internet para sincronizar.')
+          navigate('/')
+        }
+      } else {
+        setSong(data)
+        const origKey = data.original_key || 'C'
+        setOriginalKey(origKey)
+        setOriginalCapo(data.original_capo || 0)
+        setSelectedKey(origKey)
+        setCapo(data.original_capo || 0)
+        setSections(detectSections(data.content))
+      }
+    } catch (err) {
+      console.error('Erro:', err)
       navigate('/')
-    } else {
-      setSong(data)
-      const origKey = data.original_key || 'C'
-      setOriginalKey(origKey)
-      setOriginalCapo(data.original_capo || 0)
-      setSelectedKey(origKey)
-      setCapo(data.original_capo || 0)
-      setSections(detectSections(data.content))
     }
     setLoading(false)
   }
 
   const detectSections = (content) => {
+    if (!content) return []
     const lines = content.split('\n')
     const foundSections = []
     lines.forEach((line, index) => {
@@ -100,7 +135,11 @@ export default function Player() {
 
   const handleEdit = () => navigate(`/editor/${id}`)
 
-  const semitones = getSemitonesDifference(originalKey, selectedKey)
+  // Calcula o tom efetivo baseado no capo
+  const effectiveKey = getNoteFromSemitones(originalKey, capo)
+  
+  // Semitons para transposição (considera o capo)
+  const semitones = getSemitonesDifference(effectiveKey, selectedKey)
 
   const startAutoScroll = () => {
     setAutoScroll(true)
@@ -188,7 +227,6 @@ export default function Player() {
 
   return (
     <>
-      {/* BARRA FIXA 1: TODOS OS CONTROLES */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-lg border-b border-border shadow-lg safe-top">
         <div className="px-2 py-2">
           <div className="max-w-5xl mx-auto flex items-center gap-1.5 flex-wrap justify-between">
@@ -228,7 +266,7 @@ export default function Player() {
                     setShowCapoDropdown(false)
                   }}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${
-                    selectedKey === originalKey
+                    selectedKey === effectiveKey
                       ? 'bg-accent text-white'
                       : 'bg-surface2 text-accent border border-accent/40'
                   }`}
@@ -296,6 +334,9 @@ export default function Player() {
                           key={n}
                           onClick={() => {
                             setCapo(n)
+                            // Quando muda o capo, atualiza o tom selecionado para o novo tom efetivo
+                            const newEffectiveKey = getNoteFromSemitones(originalKey, n)
+                            setSelectedKey(newEffectiveKey)
                             setShowCapoDropdown(false)
                           }}
                           className={`h-10 rounded-lg font-mono font-bold text-sm transition-all ${
@@ -348,7 +389,7 @@ export default function Player() {
               <div className="w-px h-5 bg-border"></div>
 
               <div className="hidden sm:flex items-center gap-1">
-                <span className="text-[10px]">🐢</span>
+                <span className="text-[10px]"></span>
                 <input
                   type="range"
                   min="10"
@@ -357,7 +398,7 @@ export default function Player() {
                   onChange={e => setScrollSpeed(parseInt(e.target.value))}
                   className="w-16 accent-accent"
                 />
-                <span className="text-[10px]"></span>
+                <span className="text-[10px]">🐇</span>
               </div>
             </div>
 
@@ -395,15 +436,16 @@ export default function Player() {
           </div>
         </div>
 
+        {/* BARRA DE SEÇÕES - SEMPRE VISÍVEL SE HOUVER SEÇÕES */}
         {sections.length > 0 && (
           <div className="border-t border-border bg-bg/80 px-2 py-2">
-            <div className="max-w-5xl mx-auto flex justify-center">
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin justify-center flex-wrap">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 justify-start flex-nowrap">
                 {sections.map((section, idx) => (
                   <button
                     key={section.id}
                     onClick={() => scrollToSection(section)}
-                    className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all ${
+                    className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
                       activeSection === section.id
                         ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
                         : idx % 2 === 0
@@ -420,15 +462,21 @@ export default function Player() {
         )}
       </div>
 
-      {/* CONTEÚDO */}
       <div 
         className="min-h-screen p-4 md:p-6 pb-10"
         style={{ 
-          paddingTop: sections.length > 0 ? 'calc(env(safe-area-inset-top) + 150px)' : 'calc(env(safe-area-inset-top) + 80px)' 
+          paddingTop: sections.length > 0 ? 'calc(env(safe-area-inset-top) + 160px)' : 'calc(env(safe-area-inset-top) + 80px)' 
         }}
       >
         <div className="max-w-4xl mx-auto space-y-4">
           
+          {!isOnline && (
+            <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2">
+              <span></span>
+              <span>Modo offline - Usando dados salvos</span>
+            </div>
+          )}
+
           <div className="bg-surface border border-border rounded-xl p-3 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className="text-lg md:text-xl font-bold text-text truncate">{song.title}</h1>
@@ -436,9 +484,14 @@ export default function Player() {
             </div>
             <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
               <span className="text-xs font-mono bg-accent/10 text-accent px-2 py-0.5 rounded-full">{song.bpm} BPM</span>
-              <span className="text-xs font-mono bg-surface2 text-muted px-2 py-0.5 rounded-full">Tom: {selectedKey}{semitones !== 0 ? ` (${semitones > 0 ? '+' : ''}${semitones})` : ''}</span>
+              <span className="text-xs font-mono bg-surface2 text-muted px-2 py-0.5 rounded-full">
+                Tom: {selectedKey}
+                {semitones !== 0 ? ` (${semitones > 0 ? '+' : ''}${semitones})` : ''}
+              </span>
               {capo > 0 && (
-                <span className="text-xs font-mono bg-accent2/10 text-accent2 px-2 py-0.5 rounded-full">Capo {capo}ª</span>
+                <span className="text-xs font-mono bg-accent2/10 text-accent2 px-2 py-0.5 rounded-full">
+                  Capo {capo}ª (efetivo: {effectiveKey})
+                </span>
               )}
             </div>
           </div>

@@ -124,3 +124,16 @@ export function getSemitonesDifference(from, to) {
   if (diff < -6) diff += 12
   return diff
 }
+// Converte nota + semitons em nova nota
+export const getNoteFromSemitones = (note, semitones) => {
+  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+  const flatToSharp = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' }
+  
+  let cleanNote = flatToSharp[note] || note
+  const index = notes.indexOf(cleanNote)
+  
+  if (index === -1) return note
+  
+  const newIndex = (index + semitones) % 12
+  return notes[newIndex]
+}

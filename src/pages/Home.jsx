@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { 
+  cacheSongs, 
+  getCachedSongs, 
+  cacheSetlists, 
+  getCachedSetlists,
+  getLastSync 
+} from '../services/cache'
 import SongRow from '../components/SongRow'
 import SetlistCard from '../components/SetlistCard'
 import CreateSetlistModal from '../components/CreateSetlistModal'
@@ -13,40 +20,93 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('songs')
   const [showCreateSetlist, setShowCreateSetlist] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [lastSync, setLastSync] = useState(null)
 
   useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
     fetchData()
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
 
   const fetchData = async () => {
     setLoading(true)
     
-    const { data: songsData } = await supabase
-      .from('songs')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (songsData) {
-      setSongs(songsData)
-      setFilteredSongs(songsData)
+    if (navigator.onLine) {
+      try {
+        const { data: songsData, error: songsError } = await supabase
+          .from('songs')
+          .select('*')
+          .order('created_at', { ascending: false })
+        
+        if (songsError) throw songsError
+        
+        if (songsData) {
+          setSongs(songsData)
+          setFilteredSongs(songsData)
+          await cacheSongs(songsData)
+        }
+
+        const { data: setlistsData, error: setlistsError } = await supabase
+          .from('setlists')
+          .select(`
+            *,
+            setlist_songs (
+              id,
+              position,
+              songs (id, title, artist, original_key, bpm)
+            )
+          `)
+          .order('created_at', { ascending: false })
+        
+        if (setlistsError) throw setlistsError
+        
+        if (setlistsData) {
+          setSetlists(setlistsData)
+          await cacheSetlists(setlistsData)
+        }
+
+        const now = new Date()
+        setLastSync(now)
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error)
+        await loadFromCache()
+      }
+    } else {
+      await loadFromCache()
     }
 
-    // IMPORTANTE: Buscar o ID da tabela setlist_songs!
-    const { data: setlistsData } = await supabase
-      .from('setlists')
-      .select(`
-        *,
-        setlist_songs (
-          id,
-          position,
-          songs (id, title, artist, original_key, bpm)
-        )
-      `)
-      .order('created_at', { ascending: false })
-    
-    if (setlistsData) setSetlists(setlistsData)
-
     setLoading(false)
+  }
+
+  const loadFromCache = async () => {
+    console.log('📡 Carregando do cache...')
+    
+    const cachedSongs = await getCachedSongs()
+    const cachedSetlists = await getCachedSetlists()
+    const lastSyncTime = await getLastSync()
+    
+    if (cachedSongs.length > 0) {
+      setSongs(cachedSongs)
+      setFilteredSongs(cachedSongs)
+    }
+    
+    if (cachedSetlists.length > 0) {
+      setSetlists(cachedSetlists)
+    }
+    
+    if (lastSyncTime) {
+      setLastSync(lastSyncTime)
+    }
   }
 
   const handleSearch = (query) => {
@@ -60,6 +120,11 @@ export default function Home() {
       song.artist.toLowerCase().includes(query.toLowerCase())
     )
     setFilteredSongs(filtered)
+  }
+
+  const formatLastSync = (date) => {
+    if (!date) return 'Nunca'
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   }
 
   if (loading) {
@@ -79,7 +144,20 @@ export default function Home() {
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-accent to-accent2 bg-clip-text text-transparent">
               🎸 Cifras App
             </h1>
-            <p className="text-muted text-sm mt-1">Suas músicas e setlists para o culto</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                isOnline 
+                  ? 'bg-green-600/20 text-green-400' 
+                  : 'bg-orange-600/20 text-orange-400'
+              }`}>
+                {isOnline ? '🟢 Online' : ' Offline'}
+              </span>
+              {lastSync && (
+                <span className="text-xs text-muted">
+                  Sync: {formatLastSync(lastSync)}
+                </span>
+              )}
+            </div>
           </div>
           <Link
             to="/editor"
@@ -89,13 +167,19 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Busca */}
+        {!isOnline && (
+          <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-4 text-orange-400 text-sm flex items-center gap-2">
+            <span>📡</span>
+            <span>Você está offline. Usando dados salvos no dispositivo.</span>
+          </div>
+        )}
+
         <div className="relative">
           <input
             type="text"
             value={searchQuery}
             onChange={e => handleSearch(e.target.value)}
-            placeholder="🔍 Buscar músicas..."
+            placeholder=" Buscar músicas..."
             className="w-full bg-surface border border-border rounded-xl px-5 py-3 pl-12 text-text focus:border-accent outline-none"
           />
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +187,6 @@ export default function Home() {
           </svg>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 border-b border-border">
           <button
             onClick={() => setActiveTab('songs')}
@@ -125,7 +208,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Conteúdo */}
         {activeTab === 'songs' ? (
           <div className="space-y-3">
             {filteredSongs.length === 0 ? (
