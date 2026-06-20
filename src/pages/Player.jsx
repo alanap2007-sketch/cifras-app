@@ -10,17 +10,27 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-// Regex para identificar acordes (com ou sem colchetes)
-const CHORD_PATTERN = /\[?([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)\]?/gi
+// Regex para identificar acordes individuais
+const CHORD_REGEX = /^[A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
-// Verifica se uma linha é APENAS acordes (sem texto de letra)
-const isChordOnlyLine = (line) => {
+// Verifica se uma palavra é um acorde
+const isChord = (word) => {
+  const clean = word.replace(/[\[\]]/g, '').trim()
+  if (!clean) return false
+  return CHORD_REGEX.test(clean)
+}
+
+// Verifica se uma linha é APENAS acordes (pode ter espaços entre eles)
+const isChordLine = (line) => {
   const trimmed = line.trim()
   if (!trimmed) return false
-  // Remove acordes (com ou sem colchetes) e espaços
-  const withoutChords = trimmed.replace(CHORD_PATTERN, '').replace(/[\[\]]/g, '').trim()
-  // Se não sobrou nada além de espaços, é linha de acordes
-  return withoutChords === '' || /^[\s]+$/.test(withoutChords)
+  
+  // Divide por espaços e verifica se cada parte é um acorde
+  const parts = trimmed.split(/\s+/)
+  if (parts.length === 0) return false
+  
+  // Todas as partes devem ser acordes válidos
+  return parts.every(part => isChord(part))
 }
 
 export default function Player() {
@@ -181,14 +191,10 @@ export default function Player() {
 
   const startAutoScroll = () => {
     setAutoScroll(true)
-    // Scroll BEM lento - a cada 100ms
     animationRef.current = setInterval(() => {
-      // Velocidade base: 5px/seg + ajuste mínimo
       const pixelsPerSecond = 5 + (scrollSpeedRef.current * 2)
       const scrollAmount = pixelsPerSecond / 10
-      
       window.scrollBy(0, scrollAmount)
-      
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
         stopAutoScroll()
       }
@@ -228,7 +234,6 @@ export default function Player() {
   const borderColor = isLightTheme ? 'border-gray-300' : 'border-border'
   const mutedColor = isLightTheme ? 'text-gray-600' : 'text-muted'
 
-  // Agrupa linhas por seções
   const groupContentBySections = () => {
     const lines = transposedContent.split('\n')
     const groups = []
@@ -253,7 +258,7 @@ export default function Player() {
 
   const contentGroups = groupContentBySections()
 
-  // Renderiza uma linha preservando o alinhamento EXATO
+  // Renderiza uma linha
   const renderLine = (line) => {
     const trimmed = line.trim()
     
@@ -262,40 +267,8 @@ export default function Player() {
       return <div style={{ height: `${fontSize * 0.4}px` }}></div>
     }
     
-    // Linha de acordes (só tem acordes, sem letra)
-    if (isChordOnlyLine(trimmed)) {
-      // Mantém o espaçamento original com whiteSpace: 'pre'
-      // Substitui acordes entre colchetes [Am] por versão colorida
-      const parts = trimmed.split(/(\[[^\]]+\])/g)
-      
-      if (parts.some(p => p.startsWith('['))) {
-        // Tem colchetes - renderiza com cores
-        return (
-          <div 
-            className="font-mono font-bold" 
-            style={{ 
-              fontSize: `${fontSize}px`, 
-              lineHeight: 1.3,
-              marginBottom: '2px',
-              whiteSpace: 'pre',
-              fontFamily: 'monospace'
-            }}
-          >
-            {parts.map((part, i) => {
-              if (part.startsWith('[') && part.endsWith(']')) {
-                return (
-                  <span key={i} style={{ color: '#f97316' }}>
-                    {part.replace(/[\[\]]/g, '')}
-                  </span>
-                )
-              }
-              return <span key={i} style={{ color: '#f97316' }}>{part}</span>
-            })}
-          </div>
-        )
-      }
-      
-      // Sem colchetes - tudo laranja mantendo espaçamento
+    // Linha de acordes (só tem acordes)
+    if (isChordLine(trimmed)) {
       return (
         <div 
           className="font-mono font-bold" 
@@ -313,7 +286,7 @@ export default function Player() {
       )
     }
     
-    // Linha de letra (pode ter acordes entre colchetes inline)
+    // Linha de letra (pode ter acordes entre colchetes)
     const hasInlineChords = /\[[^\]]+\]/.test(trimmed)
     
     if (hasInlineChords) {
@@ -343,7 +316,7 @@ export default function Player() {
       )
     }
 
-    // Linha de letra normal (sem acordes)
+    // Linha de letra normal
     return (
       <div 
         className="font-mono" 
@@ -390,7 +363,7 @@ export default function Player() {
                   onClick={(e) => { e.stopPropagation(); setShowKeyDropdown(!showKeyDropdown); setShowCapoDropdown(false); setShowSettings(false) }}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${selectedKey === effectiveKey ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`}`}
                 >
-                  <span></span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
+                  <span>🎼</span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showKeyDropdown && (
                   <div className={`absolute top-full left-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[240px]`} onClick={(e) => e.stopPropagation()}>
@@ -409,7 +382,7 @@ export default function Player() {
                   onClick={(e) => { e.stopPropagation(); setShowCapoDropdown(!showCapoDropdown); setShowKeyDropdown(false); setShowSettings(false) }}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${capo === 0 ? `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent2'} border border-accent2/40` : 'bg-accent2 text-white'}`}
                 >
-                  <span></span><span>{capo === 0 ? 'Off' : `${capo}ª`}</span><span className="text-[10px]">▼</span>
+                  <span>🎸</span><span>{capo === 0 ? 'Off' : `${capo}ª`}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showCapoDropdown && (
                   <div className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[200px]`} onClick={(e) => e.stopPropagation()}>
@@ -428,7 +401,7 @@ export default function Player() {
               {!autoScroll ? (
                 <button onClick={startAutoScroll} className="flex items-center gap-1 bg-accent hover:bg-accent/90 text-white text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"><span>▶</span></button>
               ) : (
-                <button onClick={stopAutoScroll} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"><span>⏸</span></button>
+                <button onClick={stopAutoScroll} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"><span></span></button>
               )}
               <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
               <button onClick={() => setScrollSpeed(s => Math.max(1, s - 1))} className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}>-</button>
@@ -564,6 +537,7 @@ export default function Player() {
                     id={group.section.id}
                     className={`${surfaceColor} border ${borderColor} rounded-xl p-4 md:p-5 scroll-mt-32`}
                   >
+                    {/* Título da seção - SEMPRE com o mesmo estilo */}
                     <div className="mb-3">
                       <span className="inline-block bg-accent/20 border border-accent/50 text-accent font-bold px-4 py-2 rounded-lg text-sm uppercase tracking-wide">
                         {group.section.name}
