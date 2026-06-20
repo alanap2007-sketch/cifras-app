@@ -12,7 +12,9 @@ const SECTION_KEYWORDS = [
 
 // Regex para acordes
 // Regex CORRIGIDA - versões compostas ANTES das simples
+// Regex CORRIGIDA
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
+
 // Verifica se uma palavra é um acorde
 const isChord = (word) => {
   const clean = word.replace(/[\[\]\(\)]/g, '').trim()
