@@ -10,14 +10,13 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-// Regex para identificar acordes
-const CHORD_REGEX = /^([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)$/i
+// Regex melhorada para aceitar acordes com ou sem colchetes
+const CHORD_REGEX = /^\[?([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)\]?$/i
 
 // Verifica se uma linha é só acordes
 const isChordLine = (line) => {
   const trimmed = line.trim()
   if (!trimmed) return false
-  // Divide por espaços e verifica se cada parte é um acorde válido
   const parts = trimmed.split(/\s+/)
   if (parts.length === 0) return false
   return parts.every(part => CHORD_REGEX.test(part))
@@ -263,12 +262,11 @@ export default function Player() {
   const renderLine = (line) => {
     const trimmed = line.trim()
     
-    // Linha vazia
     if (!trimmed) {
       return <div style={{ height: `${fontSize * 0.5}px` }}></div>
     }
     
-    // Linha de acordes (só acordes)
+    // Linha de acordes (detecta linhas que são só acordes)
     if (isChordLine(trimmed)) {
       const chords = trimmed.split(/\s+/)
       return (
@@ -276,27 +274,51 @@ export default function Player() {
           className="font-mono font-bold tracking-wide" 
           style={{ 
             fontSize: `${fontSize}px`, 
-            color: '#f97316',
+            color: '#f97316', // Laranja forçado
             lineHeight: 1.2,
-            marginBottom: '2px'
+            marginBottom: '4px'
           }}
         >
-          {chords.map((chord, idx) => (
-            <span key={idx} className="inline-block mr-4">
-              {chord}
-            </span>
-          ))}
+          {chords.map((chord, idx) => {
+             // Remove colchetes se houver para exibição limpa
+             const cleanChord = chord.replace(/[\[\]]/g, '')
+             return (
+              <span key={idx} className="inline-block mr-4">
+                {cleanChord}
+              </span>
+            )
+          })}
         </div>
       )
     }
     
-    // Linha de letra
+    // Linha de letra (pode ter acordes inline entre colchetes [Am])
+    const inlineChordRegex = /(\[.+?\])/g
+    
+    if (inlineChordRegex.test(trimmed)) {
+        const parts = trimmed.split(inlineChordRegex)
+        return (
+            <div className="font-mono whitespace-pre-wrap" style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}>
+                {parts.map((part, i) => {
+                    if (part.startsWith('[') && part.endsWith(']')) {
+                        return (
+                            <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
+                                {part.replace(/[\[\]]/g, '')}
+                            </span>
+                        )
+                    }
+                    return <span key={i} className={isLightTheme ? 'text-gray-900' : 'text-text'}>{part}</span>
+                })}
+            </div>
+        )
+    }
+
+    // Linha de letra normal
     return (
       <div 
-        className="font-mono whitespace-pre-wrap" 
+        className={`font-mono whitespace-pre-wrap ${isLightTheme ? 'text-gray-900' : 'text-text'}`} 
         style={{ 
           fontSize: `${fontSize}px`, 
-          color: isLightTheme ? '#1a1a1a' : undefined,
           lineHeight: 1.4
         }}
       >
@@ -441,12 +463,10 @@ export default function Player() {
                     className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
                       activeSection === section.id
                         ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
-                        : idx % 2 === 0
-                          ? `${surface2Color} text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10`
-                          : `${surface2Color} text-accent2 border border-accent2/30 hover:border-accent2/60 hover:bg-accent2/10`
+                        : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10' // Cor única (Accent/Roxo)
                     }`}
                   >
-                    {section.name}
+                    {section.name.toUpperCase()} {/* Tudo Maiúsculo */}
                   </button>
                 ))}
               </div>
@@ -484,7 +504,7 @@ export default function Player() {
           
           {!isOnline && (
             <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2">
-              <span>📡</span><span>Modo offline - Usando dados salvos</span>
+              <span></span><span>Modo offline - Usando dados salvos</span>
             </div>
           )}
 
