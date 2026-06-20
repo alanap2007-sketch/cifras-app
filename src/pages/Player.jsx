@@ -23,9 +23,13 @@ const isChord = (word) => {
 }
 
 // Verifica se uma linha é APENAS acordes
+// Verifica se uma linha é APENAS acordes
 const isChordLine = (line) => {
   let checkLine = line.trim()
   if (!checkLine) return false
+  
+  // Remove barras verticais | no final (ex: "F#   |")
+  checkLine = checkLine.replace(/\|+$/g, '').trim()
   
   // Remove parênteses externos
   if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
