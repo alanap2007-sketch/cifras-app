@@ -24,15 +24,16 @@ export default function Player() {
   const [showSettings, setShowSettings] = useState(false)
   
   const [autoScroll, setAutoScroll] = useState(false)
-  const [scrollSpeed, setScrollSpeed] = useState(30)
+  const [scrollSpeed, setScrollSpeed] = useState(10) // Começa lento
   const scrollSpeedRef = useRef(scrollSpeed)
   const animationRef = useRef(null)
   const lastTimeRef = useRef(null)
 
-  const [ledOn, setLedOn] = useState(false)
+  // LED do BPM - conta compassos (4 beats)
+  const [beatCount, setBeatCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [menuVisible, setMenuVisible] = useState(true)
-  const [theme, setTheme] = useState('dark') // 'dark' ou 'light'
+  const [theme, setTheme] = useState('dark')
   const [autoFontSize, setAutoFontSize] = useState(true)
 
   const contentRef = useRef(null)
@@ -41,13 +42,18 @@ export default function Player() {
     scrollSpeedRef.current = scrollSpeed
   }, [scrollSpeed])
 
-  // LED do BPM - cada piscada = 1 beat (não compasso)
+  // LED do BPM - cada 4 beats = 1 compasso
   useEffect(() => {
     if (!song?.bpm || song.bpm <= 0) return
-    const interval = (60 / song.bpm) * 1000
+    
+    const beatInterval = (60 / song.bpm) * 1000
+    let currentBeat = 0
+    
     const timer = setInterval(() => {
-      setLedOn(v => !v)
-    }, interval)
+      currentBeat = (currentBeat + 1) % 4
+      setBeatCount(currentBeat)
+    }, beatInterval)
+    
     return () => clearInterval(timer)
   }, [song?.bpm])
 
@@ -79,7 +85,7 @@ export default function Player() {
     return () => stopAutoScroll()
   }, [id])
 
-  // Auto-ajuste de fonte baseado na largura da tela
+  // Auto-ajuste de fonte
   useEffect(() => {
     if (!autoFontSize) return
     
@@ -185,8 +191,7 @@ export default function Player() {
     const deltaTime = (time - lastTimeRef.current) / 1000
     lastTimeRef.current = time
     
-    // Velocidade em pixels por segundo
-    const scrollAmount = scrollSpeedRef.current * deltaTime * 10
+    const scrollAmount = scrollSpeedRef.current * deltaTime * 8
     window.scrollBy(0, scrollAmount)
     
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
@@ -218,7 +223,9 @@ export default function Player() {
   const bgColor = isLightTheme ? 'bg-white' : 'bg-bg'
   const textColor = isLightTheme ? 'text-gray-900' : 'text-text'
   const surfaceColor = isLightTheme ? 'bg-gray-100' : 'bg-surface'
+  const surface2Color = isLightTheme ? 'bg-gray-200' : 'bg-surface2'
   const borderColor = isLightTheme ? 'border-gray-300' : 'border-border'
+  const mutedColor = isLightTheme ? 'text-gray-600' : 'text-muted'
 
   const renderContent = () => {
     const lines = transposedContent.split('\n')
@@ -272,27 +279,27 @@ export default function Player() {
           <div className="max-w-5xl mx-auto flex items-center gap-1.5 flex-wrap justify-between">
             
             <div className="flex items-center gap-1.5">
-              <Link to="/" className="w-9 h-9 bg-surface2 hover:bg-surface border border-border text-text rounded-lg transition-colors text-sm flex items-center justify-center flex-shrink-0">
+              <Link to="/" className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center flex-shrink-0`}>
                 ←
               </Link>
               
-              <div className="flex items-center bg-surface2 rounded-lg border border-border overflow-hidden">
+              <div className={`flex items-center ${surface2Color} rounded-lg border ${borderColor} overflow-hidden`}>
                 <button 
                   onClick={() => setFontSize(s => Math.max(12, s - 2))} 
-                  className="w-9 h-9 hover:bg-accent/20 text-text transition-colors text-sm font-bold flex items-center justify-center"
+                  className={`w-9 h-9 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}
                 >
                   A-
                 </button>
-                <div className="w-px h-5 bg-border"></div>
+                <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
                 <button 
                   onClick={() => setFontSize(s => Math.min(32, s + 2))} 
-                  className="w-9 h-9 hover:bg-accent/20 text-text transition-colors text-sm font-bold flex items-center justify-center"
+                  className={`w-9 h-9 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}
                 >
                   A+
                 </button>
               </div>
 
-              <span className="text-xs font-mono text-muted px-1 hidden sm:inline">
+              <span className={`text-xs font-mono ${mutedColor} px-1 hidden sm:inline`}>
                 {fontSize}px
               </span>
             </div>
@@ -309,20 +316,20 @@ export default function Player() {
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${
                     selectedKey === effectiveKey
                       ? 'bg-accent text-white'
-                      : 'bg-surface2 text-accent border border-accent/40'
+                      : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`
                   }`}
                 >
-                  <span>🎼</span>
+                  <span></span>
                   <span>{selectedKey}</span>
                   <span className="text-[10px]">▼</span>
                 </button>
                 
                 {showKeyDropdown && (
                   <div 
-                    className="absolute top-full left-0 mt-2 bg-surface border border-border rounded-xl shadow-2xl z-50 p-2 min-w-[240px]"
+                    className={`absolute top-full left-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[240px]`}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="text-xs text-muted mb-2 px-1">Tom da música</div>
+                    <div className={`text-xs ${mutedColor} mb-2 px-1`}>Tom da música</div>
                     <div className="grid grid-cols-6 gap-1">
                       {getAllKeys().map(key => (
                         <button
@@ -334,7 +341,7 @@ export default function Player() {
                           className={`w-9 h-9 rounded-lg font-mono font-bold text-xs transition-all ${
                             selectedKey === key
                               ? 'bg-accent text-white shadow-md shadow-accent/30'
-                              : 'bg-surface2 text-text border border-border hover:border-accent/50'
+                              : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} hover:border-accent/50`
                           }`}
                         >
                           {key}
@@ -355,21 +362,21 @@ export default function Player() {
                   }}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${
                     capo === 0
-                      ? 'bg-surface2 text-accent2 border border-accent2/40'
+                      ? `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent2'} border border-accent2/40`
                       : 'bg-accent2 text-white'
                   }`}
                 >
-                  <span></span>
+                  <span>🎸</span>
                   <span>{capo === 0 ? 'Off' : `${capo}ª`}</span>
                   <span className="text-[10px]">▼</span>
                 </button>
                 
                 {showCapoDropdown && (
                   <div 
-                    className="absolute top-full right-0 mt-2 bg-surface border border-border rounded-xl shadow-2xl z-50 p-2 min-w-[200px]"
+                    className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[200px]`}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="text-xs text-muted mb-2 px-1">Capotraste</div>
+                    <div className={`text-xs ${mutedColor} mb-2 px-1`}>Capotraste</div>
                     <div className="grid grid-cols-4 gap-1">
                       {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
                         <button
@@ -383,7 +390,7 @@ export default function Player() {
                           className={`h-10 rounded-lg font-mono font-bold text-sm transition-all ${
                             capo === n
                               ? 'bg-accent2 text-white shadow-md shadow-accent2/30'
-                              : 'bg-surface2 text-text border border-border hover:border-accent2/50'
+                              : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} hover:border-accent2/50`
                           }`}
                         >
                           {n === 0 ? 'Off' : n}
@@ -395,8 +402,8 @@ export default function Player() {
               </div>
             </div>
 
-            {/* Controles de rolagem na mesma linha */}
-            <div className="flex items-center gap-1.5 bg-surface2 rounded-lg px-1.5 py-1">
+            {/* Controles de rolagem - só botões - e + */}
+            <div className={`flex items-center gap-1.5 ${surface2Color} rounded-lg px-1.5 py-1`}>
               {!autoScroll ? (
                 <button
                   onClick={startAutoScroll}
@@ -413,36 +420,41 @@ export default function Player() {
                 </button>
               )}
               
-              <div className="w-px h-5 bg-border"></div>
+              <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
 
-              {/* Controle de velocidade com - e + */}
+              {/* Botões - e + para velocidade */}
               <button
-                onClick={() => setScrollSpeed(s => Math.max(5, s - 5))}
-                className="w-7 h-7 bg-surface hover:bg-accent/20 text-text rounded flex items-center justify-center text-xs font-bold"
+                onClick={() => setScrollSpeed(s => Math.max(1, s - 2))}
+                className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}
               >
                 -
               </button>
-              <span className="text-[10px] font-mono text-text w-5 text-center">{scrollSpeed}</span>
+              <span className={`text-[10px] font-mono ${isLightTheme ? 'text-gray-900' : 'text-text'} w-5 text-center`}>{scrollSpeed}</span>
               <button
-                onClick={() => setScrollSpeed(s => Math.min(100, s + 5))}
-                className="w-7 h-7 bg-surface hover:bg-accent/20 text-text rounded flex items-center justify-center text-xs font-bold"
+                onClick={() => setScrollSpeed(s => Math.min(50, s + 2))}
+                className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}
               >
                 +
               </button>
 
-              <div className="w-px h-5 bg-border"></div>
+              <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
 
-              {/* LED do BPM */}
+              {/* LED do BPM - 4 beats por compasso */}
               <div className="flex items-center gap-1.5 px-1">
-                <div
-                  className="w-2.5 h-2.5 rounded-full transition-all duration-75"
-                  style={{
-                    backgroundColor: ledOn ? '#8b5cf6' : '#2a2a3a',
-                    boxShadow: ledOn ? '0 0 8px #8b5cf6, 0 0 16px #8b5cf6' : 'none',
-                  }}
-                />
-                <span className="text-[10px] font-mono text-muted">
-                  <span className="text-text font-bold">{song.bpm}</span>
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3].map(beat => (
+                    <div
+                      key={beat}
+                      className="w-2 h-2 rounded-full transition-all duration-75"
+                      style={{
+                        backgroundColor: beatCount === beat ? '#8b5cf6' : (isLightTheme ? '#d1d5db' : '#2a2a3a'),
+                        boxShadow: beatCount === beat ? '0 0 6px #8b5cf6' : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+                <span className={`text-[10px] font-mono ${isLightTheme ? 'text-gray-900 font-bold' : 'text-muted'}`}>
+                  {song.bpm}
                 </span>
               </div>
             </div>
@@ -456,29 +468,29 @@ export default function Player() {
                   setShowKeyDropdown(false)
                   setShowCapoDropdown(false)
                 }}
-                className="w-9 h-9 bg-surface2 hover:bg-surface border border-border text-text rounded-lg transition-colors text-sm flex items-center justify-center"
+                className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center`}
               >
                 ⚙️
               </button>
               
               {showSettings && (
                 <div 
-                  className="absolute top-full right-0 mt-2 bg-surface border border-border rounded-xl shadow-2xl z-50 p-3 min-w-[200px]"
+                  className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-3 min-w-[200px]`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="text-xs text-muted mb-3 font-semibold">️ Configurações</div>
+                  <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>⚙️ Configurações</div>
                   
                   <div className="space-y-3">
                     {/* Tema */}
                     <div>
-                      <label className="text-xs text-muted block mb-1">Tema</label>
+                      <label className={`text-xs ${mutedColor} block mb-1`}>Tema</label>
                       <div className="flex gap-2">
                         <button
                           onClick={() => setTheme('dark')}
                           className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
                             theme === 'dark'
                               ? 'bg-accent text-white'
-                              : 'bg-surface2 text-text border border-border'
+                              : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`
                           }`}
                         >
                           🌙 Escuro
@@ -488,7 +500,7 @@ export default function Player() {
                           className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
                             theme === 'light'
                               ? 'bg-accent text-white'
-                              : 'bg-surface2 text-text border border-border'
+                              : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`
                           }`}
                         >
                           ☀️ Claro
@@ -498,11 +510,11 @@ export default function Player() {
 
                     {/* Auto font size */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted">Auto tamanho</span>
+                      <span className={`text-xs ${mutedColor}`}>Auto tamanho</span>
                       <button
                         onClick={() => setAutoFontSize(!autoFontSize)}
                         className={`w-10 h-5 rounded-full transition-colors ${
-                          autoFontSize ? 'bg-accent' : 'bg-surface2 border border-border'
+                          autoFontSize ? 'bg-accent' : `${surface2Color} border ${borderColor}`
                         }`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
@@ -532,23 +544,7 @@ export default function Player() {
           </div>
         </div>
 
-        <div className="sm:hidden px-2 pb-2">
-          <div className="max-w-5xl mx-auto flex items-center gap-2 bg-surface2 rounded-lg px-3 py-1.5">
-            <span className="text-[10px]">🐢</span>
-            <span className="text-[10px] text-muted">Vel:</span>
-            <input
-              type="range"
-              min="5"
-              max="100"
-              value={scrollSpeed}
-              onChange={e => setScrollSpeed(parseInt(e.target.value))}
-              className="flex-1 accent-accent"
-            />
-            <span className="text-[10px] font-mono text-text w-5">{scrollSpeed}</span>
-            <span className="text-[10px]">🐇</span>
-          </div>
-        </div>
-
+        {/* Botões de seções - SEMPRE VISÍVEIS */}
         {sections.length > 0 && (
           <div className={`border-t ${borderColor} ${isLightTheme ? 'bg-gray-50' : 'bg-bg/80'} px-2 py-2`}>
             <div className="max-w-5xl mx-auto">
@@ -561,8 +557,8 @@ export default function Player() {
                       activeSection === section.id
                         ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
                         : idx % 2 === 0
-                          ? 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
-                          : 'bg-surface2/80 text-accent2 border border-accent2/30 hover:border-accent2/60 hover:bg-accent2/10'
+                          ? `${surface2Color} text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10`
+                          : `${surface2Color} text-accent2 border border-accent2/30 hover:border-accent2/60 hover:bg-accent2/10`
                     }`}
                   >
                     {section.name}
@@ -604,11 +600,11 @@ export default function Player() {
           <div className={`${surfaceColor} border ${borderColor} rounded-xl p-3 flex items-center justify-between flex-wrap gap-2`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className={`text-lg md:text-xl font-bold ${textColor} truncate`}>{song.title}</h1>
-              <span className="text-sm text-muted truncate hidden sm:inline">• {song.artist}</span>
+              <span className={`text-sm ${mutedColor} truncate hidden sm:inline`}>• {song.artist}</span>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
               <span className="text-xs font-mono bg-accent/10 text-accent px-2 py-0.5 rounded-full">{song.bpm} BPM</span>
-              <span className="text-xs font-mono bg-surface2 text-muted px-2 py-0.5 rounded-full">
+              <span className={`text-xs font-mono ${surface2Color} ${mutedColor} px-2 py-0.5 rounded-full`}>
                 Tom: {selectedKey}
                 {semitones !== 0 ? ` (${semitones > 0 ? '+' : ''}${semitones})` : ''}
               </span>
