@@ -1,4 +1,4 @@
-package com.cifras.app;
+package com.cifrabox.app;
 
 import com.getcapacitor.BridgeActivity;
 

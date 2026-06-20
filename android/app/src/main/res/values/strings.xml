@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">cifras-app</string>
-    <string name="title_activity_main">cifras-app</string>
-    <string name="package_name">com.cifras.app</string>
-    <string name="custom_url_scheme">com.cifras.app</string>
+    <string name="app_name">CifraBox</string>
+    <string name="title_activity_main">CifraBox</string>
+    <string name="package_name">com.cifrabox.app</string>
+    <string name="custom_url_scheme">com.cifrabox.app</string>
 </resources>
