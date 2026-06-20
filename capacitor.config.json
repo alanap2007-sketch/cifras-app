@@ -1,6 +1,6 @@
 {
-  "appId": "com.cifras.app",
-  "appName": "Cifras App",
+  "appId": "com.cifrabox.app",
+  "appName": "CifraBox",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"
