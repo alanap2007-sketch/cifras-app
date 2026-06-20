@@ -24,12 +24,11 @@ export default function Player() {
   const [showSettings, setShowSettings] = useState(false)
   
   const [autoScroll, setAutoScroll] = useState(false)
-  const [scrollSpeed, setScrollSpeed] = useState(10) // Começa lento
+  const [scrollSpeed, setScrollSpeed] = useState(2) // Padrão 2 (lento)
   const scrollSpeedRef = useRef(scrollSpeed)
   const animationRef = useRef(null)
   const lastTimeRef = useRef(null)
 
-  // LED do BPM - conta compassos (4 beats)
   const [beatCount, setBeatCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [menuVisible, setMenuVisible] = useState(true)
@@ -191,7 +190,10 @@ export default function Player() {
     const deltaTime = (time - lastTimeRef.current) / 1000
     lastTimeRef.current = time
     
-    const scrollAmount = scrollSpeedRef.current * deltaTime * 8
+    // Fórmula corrigida: velocidade mínima garantida
+    const baseSpeed = 20 // pixels por segundo base
+    const speedMultiplier = scrollSpeedRef.current * 5
+    const scrollAmount = (baseSpeed + speedMultiplier) * deltaTime
     window.scrollBy(0, scrollAmount)
     
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
@@ -319,7 +321,7 @@ export default function Player() {
                       : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`
                   }`}
                 >
-                  <span></span>
+                  <span>🎼</span>
                   <span>{selectedKey}</span>
                   <span className="text-[10px]">▼</span>
                 </button>
@@ -402,7 +404,7 @@ export default function Player() {
               </div>
             </div>
 
-            {/* Controles de rolagem - só botões - e + */}
+            {/* Controles de rolagem */}
             <div className={`flex items-center gap-1.5 ${surface2Color} rounded-lg px-1.5 py-1`}>
               {!autoScroll ? (
                 <button
@@ -422,16 +424,15 @@ export default function Player() {
               
               <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
 
-              {/* Botões - e + para velocidade */}
               <button
-                onClick={() => setScrollSpeed(s => Math.max(1, s - 2))}
+                onClick={() => setScrollSpeed(s => Math.max(1, s - 1))}
                 className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}
               >
                 -
               </button>
               <span className={`text-[10px] font-mono ${isLightTheme ? 'text-gray-900' : 'text-text'} w-5 text-center`}>{scrollSpeed}</span>
               <button
-                onClick={() => setScrollSpeed(s => Math.min(50, s + 2))}
+                onClick={() => setScrollSpeed(s => Math.min(50, s + 1))}
                 className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}
               >
                 +
@@ -439,7 +440,7 @@ export default function Player() {
 
               <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
 
-              {/* LED do BPM - 4 beats por compasso */}
+              {/* LED do BPM */}
               <div className="flex items-center gap-1.5 px-1">
                 <div className="flex gap-1">
                   {[0, 1, 2, 3].map(beat => (
@@ -459,7 +460,7 @@ export default function Player() {
               </div>
             </div>
 
-            {/* Botão de configurações */}
+            {/* Configurações */}
             <div className="relative">
               <button
                 onClick={(e) => {
@@ -478,10 +479,9 @@ export default function Player() {
                   className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-3 min-w-[200px]`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>⚙️ Configurações</div>
+                  <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>️ Configurações</div>
                   
                   <div className="space-y-3">
-                    {/* Tema */}
                     <div>
                       <label className={`text-xs ${mutedColor} block mb-1`}>Tema</label>
                       <div className="flex gap-2">
@@ -503,12 +503,11 @@ export default function Player() {
                               : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`
                           }`}
                         >
-                          ☀️ Claro
+                          ️ Claro
                         </button>
                       </div>
                     </div>
 
-                    {/* Auto font size */}
                     <div className="flex items-center justify-between">
                       <span className={`text-xs ${mutedColor}`}>Auto tamanho</span>
                       <button
@@ -570,7 +569,7 @@ export default function Player() {
         )}
       </div>
 
-      {/* Botão flutuante para mostrar menu quando escondido */}
+      {/* Botão flutuante para mostrar menu */}
       {!menuVisible && (
         <button
           onClick={toggleMenu}
@@ -592,7 +591,7 @@ export default function Player() {
           
           {!isOnline && (
             <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2">
-              <span>📡</span>
+              <span></span>
               <span>Modo offline - Usando dados salvos</span>
             </div>
           )}
