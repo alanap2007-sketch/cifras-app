@@ -10,10 +10,8 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-// Regex melhorada para aceitar acordes com ou sem colchetes
 const CHORD_REGEX = /^\[?([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)\]?$/i
 
-// Verifica se uma linha é só acordes
 const isChordLine = (line) => {
   const trimmed = line.trim()
   if (!trimmed) return false
@@ -43,7 +41,6 @@ export default function Player() {
   const [scrollSpeed, setScrollSpeed] = useState(2)
   const scrollSpeedRef = useRef(scrollSpeed)
   const animationRef = useRef(null)
-  const lastTimeRef = useRef(null)
 
   const [beatCount, setBeatCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -180,28 +177,28 @@ export default function Player() {
   const semitones = getSemitonesDifference(effectiveKey, selectedKey)
 
   const startAutoScroll = () => {
-  setAutoScroll(true)
-  // Scroll a cada 50ms (20 vezes por segundo)
-  animationRef.current = setInterval(() => {
-    const pixelsPerSecond = 30 + (scrollSpeedRef.current * 15)
-    const scrollAmount = pixelsPerSecond / 20 // divide por 20 (frames por segundo)
-    
-    window.scrollBy(0, scrollAmount)
-    
-    // Para no final da página
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
-      stopAutoScroll()
-    }
-  }, 50) // 50ms = 20fps
-}
-
-const stopAutoScroll = () => {
-  setAutoScroll(false)
-  if (animationRef.current) {
-    clearInterval(animationRef.current)
-    animationRef.current = null
+    setAutoScroll(true)
+    // Scroll MUITO lento - a cada 100ms
+    animationRef.current = setInterval(() => {
+      // Velocidade base: 10px/seg + ajuste (muito mais lento)
+      const pixelsPerSecond = 10 + (scrollSpeedRef.current * 5)
+      const scrollAmount = pixelsPerSecond / 10 // divide por 10 (scroll a cada 100ms)
+      
+      window.scrollBy(0, scrollAmount)
+      
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
+        stopAutoScroll()
+      }
+    }, 100) // 100ms = 10 vezes por segundo (mais lento)
   }
-}
+
+  const stopAutoScroll = () => {
+    setAutoScroll(false)
+    if (animationRef.current) {
+      clearInterval(animationRef.current)
+      animationRef.current = null
+    }
+  }
 
   const scrollToSection = (section) => {
     setActiveSection(section.id)
@@ -253,32 +250,32 @@ const stopAutoScroll = () => {
 
   const contentGroups = groupContentBySections()
 
-  // Renderiza uma linha (acorde ou letra)
+  // Renderiza uma linha preservando o alinhamento
   const renderLine = (line) => {
     const trimmed = line.trim()
     
     if (!trimmed) {
-      return <div style={{ height: `${fontSize * 0.5}px` }}></div>
+      return <div style={{ height: `${fontSize * 0.3}px` }}></div>
     }
     
-    // Linha de acordes (detecta linhas que são só acordes)
+    // Verifica se é linha de acordes (só tem acordes)
     if (isChordLine(trimmed)) {
       const chords = trimmed.split(/\s+/)
       return (
         <div 
-          className="font-mono font-bold tracking-wide" 
+          className="font-mono font-bold" 
           style={{ 
             fontSize: `${fontSize}px`, 
-            color: '#f97316', // Laranja forçado
-            lineHeight: 1.2,
-            marginBottom: '4px'
+            color: '#f97316',
+            lineHeight: 1.3,
+            marginBottom: '2px',
+            whiteSpace: 'pre'
           }}
         >
           {chords.map((chord, idx) => {
-             // Remove colchetes se houver para exibição limpa
-             const cleanChord = chord.replace(/[\[\]]/g, '')
-             return (
-              <span key={idx} className="inline-block mr-4">
+            const cleanChord = chord.replace(/[\[\]]/g, '')
+            return (
+              <span key={idx} className="inline-block" style={{ minWidth: '60px', marginRight: '10px' }}>
                 {cleanChord}
               </span>
             )
@@ -287,31 +284,37 @@ const stopAutoScroll = () => {
       )
     }
     
-    // Linha de letra (pode ter acordes inline entre colchetes [Am])
-    const inlineChordRegex = /(\[.+?\])/g
-    
+    // Verifica se tem acordes inline entre colchetes
+    const inlineChordRegex = /(\[[^\]]+\])/g
     if (inlineChordRegex.test(trimmed)) {
-        const parts = trimmed.split(inlineChordRegex)
-        return (
-            <div className="font-mono whitespace-pre-wrap" style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}>
-                {parts.map((part, i) => {
-                    if (part.startsWith('[') && part.endsWith(']')) {
-                        return (
-                            <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
-                                {part.replace(/[\[\]]/g, '')}
-                            </span>
-                        )
-                    }
-                    return <span key={i} className={isLightTheme ? 'text-gray-900' : 'text-text'}>{part}</span>
-                })}
-            </div>
-        )
+      const parts = trimmed.split(inlineChordRegex).filter(p => p)
+      return (
+        <div 
+          className="font-mono whitespace-pre" 
+          style={{ 
+            fontSize: `${fontSize}px`, 
+            lineHeight: 1.4,
+            color: isLightTheme ? '#1a1a1a' : undefined
+          }}
+        >
+          {parts.map((part, i) => {
+            if (part.startsWith('[') && part.endsWith(']')) {
+              return (
+                <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
+                  {part.replace(/[\[\]]/g, '')}
+                </span>
+              )
+            }
+            return <span key={i}>{part}</span>
+          })}
+        </div>
+      )
     }
 
     // Linha de letra normal
     return (
       <div 
-        className={`font-mono whitespace-pre-wrap ${isLightTheme ? 'text-gray-900' : 'text-text'}`} 
+        className={`font-mono whitespace-pre ${isLightTheme ? 'text-gray-900' : 'text-text'}`} 
         style={{ 
           fontSize: `${fontSize}px`, 
           lineHeight: 1.4
@@ -439,7 +442,7 @@ const stopAutoScroll = () => {
         </div>
       </div>
 
-      {/* BARRA 2 - Seções (SEMPRE VISÍVEL, nunca some) */}
+      {/* BARRA 2 - Seções (SEMPRE VISÍVEL) */}
       {sections.length > 0 && (
         <div 
           className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-gray-50/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
@@ -458,10 +461,10 @@ const stopAutoScroll = () => {
                     className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
                       activeSection === section.id
                         ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
-                        : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10' // Cor única (Accent/Roxo)
+                        : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
                     }`}
                   >
-                    {section.name.toUpperCase()} {/* Tudo Maiúsculo */}
+                    {section.name.toUpperCase()}
                   </button>
                 ))}
               </div>
@@ -470,7 +473,7 @@ const stopAutoScroll = () => {
         </div>
       )}
 
-      {/* Botão flutuante para mostrar menu */}
+      {/* Botão flutuante */}
       {!menuVisible && (
         <button
           onClick={toggleMenu}
@@ -484,7 +487,7 @@ const stopAutoScroll = () => {
         </button>
       )}
 
-      {/* CONTEÚDO DA MÚSICA */}
+      {/* CONTEÚDO */}
       <div 
         className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
         style={{ 
@@ -499,11 +502,10 @@ const stopAutoScroll = () => {
           
           {!isOnline && (
             <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2">
-              <span></span><span>Modo offline - Usando dados salvos</span>
+              <span>📡</span><span>Modo offline - Usando dados salvos</span>
             </div>
           )}
 
-          {/* Card de Info da Música */}
           <div className={`${surfaceColor} border ${borderColor} rounded-xl p-3 flex items-center justify-between flex-wrap gap-2`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className={`text-lg md:text-xl font-bold ${textColor} truncate`}>{song.title}</h1>
@@ -520,7 +522,6 @@ const stopAutoScroll = () => {
             </div>
           </div>
 
-          {/* Conteúdo agrupado por seções */}
           <div className="space-y-3">
             {contentGroups.map((group, gIdx) => {
               if (group.type === 'section' && group.section) {
@@ -530,13 +531,11 @@ const stopAutoScroll = () => {
                     id={group.section.id}
                     className={`${surfaceColor} border ${borderColor} rounded-xl p-4 md:p-5 scroll-mt-32`}
                   >
-                    {/* Título da seção */}
                     <div className="mb-3">
                       <span className="inline-block bg-accent/20 border border-accent/50 text-accent font-bold px-4 py-2 rounded-lg text-sm uppercase tracking-wide">
                         {group.section.name}
                       </span>
                     </div>
-                    {/* Linhas da seção */}
                     <div className="space-y-1">
                       {group.lines.map((line, lIdx) => (
                         <div key={lIdx}>{renderLine(line.text)}</div>
