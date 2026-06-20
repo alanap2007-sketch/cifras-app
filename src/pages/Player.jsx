@@ -260,63 +260,38 @@ export default function Player() {
 
   // Renderiza uma linha
   const renderLine = (line) => {
-    const trimmed = line.trim()
-    
-    // Linha vazia
-    if (!trimmed) {
-      return <div style={{ height: `${fontSize * 0.4}px` }}></div>
-    }
-    
-    // Linha de acordes (só tem acordes)
-    if (isChordLine(trimmed)) {
-      return (
-        <div 
-          className="font-mono font-bold" 
-          style={{ 
-            fontSize: `${fontSize}px`, 
-            color: '#f97316',
-            lineHeight: 1.3,
-            marginBottom: '2px',
-            whiteSpace: 'pre',
-            fontFamily: 'monospace'
-          }}
-        >
-          {trimmed}
-        </div>
-      )
-    }
-    
-    // Linha de letra (pode ter acordes entre colchetes)
-    const hasInlineChords = /\[[^\]]+\]/.test(trimmed)
-    
-    if (hasInlineChords) {
-      const parts = trimmed.split(/(\[[^\]]+\])/g).filter(p => p !== '')
-      return (
-        <div 
-          className="font-mono" 
-          style={{ 
-            fontSize: `${fontSize}px`, 
-            lineHeight: 1.4,
-            whiteSpace: 'pre',
-            fontFamily: 'monospace',
-            color: isLightTheme ? '#1a1a1a' : undefined
-          }}
-        >
-          {parts.map((part, i) => {
-            if (part.startsWith('[') && part.endsWith(']')) {
-              return (
-                <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
-                  {part.replace(/[\[\]]/g, '')}
-                </span>
-              )
-            }
-            return <span key={i}>{part}</span>
-          })}
-        </div>
-      )
-    }
-
-    // Linha de letra normal
+  // NÃO faz trim - preserva espaços originais!
+  
+  // Linha vazia ou só espaços
+  if (!line || line.trim() === '') {
+    return <div style={{ height: `${fontSize * 0.4}px` }}></div>
+  }
+  
+  // Verifica se é linha de acordes (sem trim para preservar posição)
+  const trimmedForCheck = line.trim()
+  if (isChordLine(trimmedForCheck)) {
+    return (
+      <div 
+        className="font-mono font-bold" 
+        style={{ 
+          fontSize: `${fontSize}px`, 
+          color: '#f97316',
+          lineHeight: 1.3,
+          marginBottom: '2px',
+          whiteSpace: 'pre',
+          fontFamily: 'monospace'
+        }}
+      >
+        {line} {/* USA line ORIGINAL, não trimmed! */}
+      </div>
+    )
+  }
+  
+  // Linha de letra (pode ter acordes entre colchetes)
+  const hasInlineChords = /\[[^\]]+\]/.test(line)
+  
+  if (hasInlineChords) {
+    const parts = line.split(/(\[[^\]]+\])/g).filter(p => p !== '')
     return (
       <div 
         className="font-mono" 
@@ -328,10 +303,36 @@ export default function Player() {
           color: isLightTheme ? '#1a1a1a' : undefined
         }}
       >
-        {line}
+        {parts.map((part, i) => {
+          if (part.startsWith('[') && part.endsWith(']')) {
+            return (
+              <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
+                {part.replace(/[\[\]]/g, '')}
+              </span>
+            )
+          }
+          return <span key={i}>{part}</span>
+        })}
       </div>
     )
   }
+
+  // Linha de letra normal - PRESERVA ESPAÇOS ORIGINAIS
+  return (
+    <div 
+      className="font-mono" 
+      style={{ 
+        fontSize: `${fontSize}px`, 
+        lineHeight: 1.4,
+        whiteSpace: 'pre',
+        fontFamily: 'monospace',
+        color: isLightTheme ? '#1a1a1a' : undefined
+      }}
+    >
+      {line} {/* USA line ORIGINAL! */}
+    </div>
+  )
+}
 
   return (
     <>
