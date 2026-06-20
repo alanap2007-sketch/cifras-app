@@ -180,33 +180,28 @@ export default function Player() {
   const semitones = getSemitonesDifference(effectiveKey, selectedKey)
 
   const startAutoScroll = () => {
-    setAutoScroll(true)
-    lastTimeRef.current = performance.now()
-    animationRef.current = requestAnimationFrame(scrollStep)
-  }
-
-  const stopAutoScroll = () => {
-    setAutoScroll(false)
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
-    }
-  }
-
-  const scrollStep = (time) => {
-    if (!lastTimeRef.current) lastTimeRef.current = time
-    const deltaTime = (time - lastTimeRef.current) / 1000
-    lastTimeRef.current = time
-    const baseSpeed = 10
-    const speedMultiplier = scrollSpeedRef.current * 3
-    const scrollAmount = (baseSpeed + speedMultiplier) * deltaTime
+  setAutoScroll(true)
+  // Scroll a cada 50ms (20 vezes por segundo)
+  animationRef.current = setInterval(() => {
+    const pixelsPerSecond = 30 + (scrollSpeedRef.current * 15)
+    const scrollAmount = pixelsPerSecond / 20 // divide por 20 (frames por segundo)
+    
     window.scrollBy(0, scrollAmount)
+    
+    // Para no final da página
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
       stopAutoScroll()
-      return
     }
-    animationRef.current = requestAnimationFrame(scrollStep)
+  }, 50) // 50ms = 20fps
+}
+
+const stopAutoScroll = () => {
+  setAutoScroll(false)
+  if (animationRef.current) {
+    clearInterval(animationRef.current)
+    animationRef.current = null
   }
+}
 
   const scrollToSection = (section) => {
     setActiveSection(section.id)
