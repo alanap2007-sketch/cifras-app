@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { getCachedSongs } from '../services/cache'
 import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
 
-const SECTION_KEYWORDS = ['intro', 'verso', 'refrão', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pré-refrão', 'pre-refrao', 'interlúdio', 'interludio', 'coro']
+const SECTION_KEYWORDS = ['intro', 'verso', 'refrão', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pré-refrão', 'pre-refrao', 'interlúdio', 'interludio', 'coro', 'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3']
 
 export default function Player() {
   const { id } = useParams()
@@ -24,7 +24,7 @@ export default function Player() {
   const [showSettings, setShowSettings] = useState(false)
   
   const [autoScroll, setAutoScroll] = useState(false)
-  const [scrollSpeed, setScrollSpeed] = useState(2) // Padrão 2 (lento)
+  const [scrollSpeed, setScrollSpeed] = useState(2)
   const scrollSpeedRef = useRef(scrollSpeed)
   const animationRef = useRef(null)
   const lastTimeRef = useRef(null)
@@ -41,7 +41,6 @@ export default function Player() {
     scrollSpeedRef.current = scrollSpeed
   }, [scrollSpeed])
 
-  // LED do BPM - cada 4 beats = 1 compasso
   useEffect(() => {
     if (!song?.bpm || song.bpm <= 0) return
     
@@ -84,7 +83,6 @@ export default function Player() {
     return () => stopAutoScroll()
   }, [id])
 
-  // Auto-ajuste de fonte
   useEffect(() => {
     if (!autoFontSize) return
     
@@ -107,7 +105,7 @@ export default function Player() {
       const { data, error } = await supabase.from('songs').select('*').eq('id', id).single()
       
       if (error) {
-        console.log('📡 Buscando música no cache (offline)...')
+        console.log(' Buscando música no cache (offline)...')
         const cachedSongs = await getCachedSongs()
         const cachedSong = cachedSongs.find(s => s.id === id)
         
@@ -150,7 +148,9 @@ export default function Player() {
         trimmed.startsWith(keyword + ':') || 
         trimmed.startsWith(keyword + ' ') ||
         trimmed === `(${keyword})` ||
-        trimmed.startsWith(`(${keyword}`)
+        trimmed.startsWith(`(${keyword}`) ||
+        trimmed === `[${keyword}]` ||
+        trimmed.startsWith(`[${keyword}]`)
       )
       if (isSection) {
         foundSections.push({ name: line.trim(), lineIndex: index, id: `section-${index}` })
@@ -190,9 +190,9 @@ export default function Player() {
     const deltaTime = (time - lastTimeRef.current) / 1000
     lastTimeRef.current = time
     
-    // Fórmula corrigida: velocidade mínima garantida
-    const baseSpeed = 20 // pixels por segundo base
-    const speedMultiplier = scrollSpeedRef.current * 5
+    // Velocidade bem reduzida
+    const baseSpeed = 10
+    const speedMultiplier = scrollSpeedRef.current * 3
     const scrollAmount = (baseSpeed + speedMultiplier) * deltaTime
     window.scrollBy(0, scrollAmount)
     
@@ -241,7 +241,7 @@ export default function Player() {
           <div key={i} className="font-mono leading-loose whitespace-pre-wrap" style={{ fontSize: `${fontSize}px` }}>
             {line.split(/(\[.+?\])/g).map((part, j) =>
               part.startsWith('[') ? (
-                <span key={j} className="text-accent font-bold bg-accent/10 px-2 py-1 rounded">
+                <span key={j} className="font-bold" style={{ color: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                   {part.replace(/[\[\]]/g, '')}
                 </span>
               ) : (
@@ -276,6 +276,7 @@ export default function Player() {
         className={`fixed top-0 left-0 right-0 z-50 ${isLightTheme ? 'bg-white/95' : 'bg-surface/95'} backdrop-blur-lg border-b ${borderColor} shadow-lg safe-top transition-all duration-300 ${
           menuVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="px-2 py-2">
           <div className="max-w-5xl mx-auto flex items-center gap-1.5 flex-wrap justify-between">
@@ -321,7 +322,7 @@ export default function Player() {
                       : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`
                   }`}
                 >
-                  <span>🎼</span>
+                  <span></span>
                   <span>{selectedKey}</span>
                   <span className="text-[10px]">▼</span>
                 </button>
@@ -404,7 +405,6 @@ export default function Player() {
               </div>
             </div>
 
-            {/* Controles de rolagem */}
             <div className={`flex items-center gap-1.5 ${surface2Color} rounded-lg px-1.5 py-1`}>
               {!autoScroll ? (
                 <button
@@ -440,7 +440,6 @@ export default function Player() {
 
               <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
 
-              {/* LED do BPM */}
               <div className="flex items-center gap-1.5 px-1">
                 <div className="flex gap-1">
                   {[0, 1, 2, 3].map(beat => (
@@ -460,7 +459,6 @@ export default function Player() {
               </div>
             </div>
 
-            {/* Configurações */}
             <div className="relative">
               <button
                 onClick={(e) => {
@@ -471,7 +469,7 @@ export default function Player() {
                 }}
                 className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center`}
               >
-                ⚙️
+                ️
               </button>
               
               {showSettings && (
@@ -479,7 +477,7 @@ export default function Player() {
                   className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-3 min-w-[200px]`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>️ Configurações</div>
+                  <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>⚙️ Configurações</div>
                   
                   <div className="space-y-3">
                     <div>
@@ -503,7 +501,7 @@ export default function Player() {
                               : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`
                           }`}
                         >
-                          ️ Claro
+                          ☀️ Claro
                         </button>
                       </div>
                     </div>
@@ -543,7 +541,7 @@ export default function Player() {
           </div>
         </div>
 
-        {/* Botões de seções - SEMPRE VISÍVEIS */}
+        {/* SEGUNDA BARRA FIXA - Botões de Seções */}
         {sections.length > 0 && (
           <div className={`border-t ${borderColor} ${isLightTheme ? 'bg-gray-50' : 'bg-bg/80'} px-2 py-2`}>
             <div className="max-w-5xl mx-auto">
@@ -569,7 +567,6 @@ export default function Player() {
         )}
       </div>
 
-      {/* Botão flutuante para mostrar menu */}
       {!menuVisible && (
         <button
           onClick={toggleMenu}
@@ -591,7 +588,7 @@ export default function Player() {
           
           {!isOnline && (
             <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2">
-              <span></span>
+              <span>📡</span>
               <span>Modo offline - Usando dados salvos</span>
             </div>
           )}

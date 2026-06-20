@@ -89,8 +89,6 @@ export default function Home() {
   }
 
   const loadFromCache = async () => {
-    console.log(' Carregando do cache...')
-    
     const cachedSongs = await getCachedSongs()
     const cachedSetlists = await getCachedSetlists()
     const lastSyncTime = await getLastSync()
@@ -136,9 +134,9 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-bg overflow-hidden">
-      {/* Header FIXO - Não rola */}
-      <div className="flex-shrink-0 bg-surface/95 backdrop-blur-lg border-b border-border shadow-lg safe-top z-10">
+    <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
+      {/* Header FIXO - Nunca rola */}
+      <header className="flex-shrink-0 bg-surface/95 backdrop-blur-lg border-b border-border shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="px-4 py-3">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -176,7 +174,7 @@ export default function Home() {
 
             {!isOnline && (
               <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2">
-                <span>📡</span>
+                <span></span>
                 <span>Você está offline. Usando dados salvos.</span>
               </div>
             )}
@@ -214,15 +212,15 @@ export default function Home() {
                 activeTab === 'setlists' ? 'text-accent' : 'text-muted hover:text-text'
               }`}
             >
-              📋 Setlists ({setlists.length})
+               Setlists ({setlists.length})
               {activeTab === 'setlists' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"></div>}
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Conteúdo com scroll - Só a lista rola */}
-      <div className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="max-w-5xl mx-auto p-4 space-y-4">
           {activeTab === 'songs' ? (
             <div className="space-y-2">
@@ -267,7 +265,7 @@ export default function Home() {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {showCreateSetlist && (
         <CreateSetlistModal
