@@ -457,13 +457,13 @@ export default function Player() {
         </div>
       </div>
 
-      {/* BARRA 2 - Seções */}
+    
       {/* BARRA 2 - Seções */}
 {sections.length > 0 && (
   <div 
     className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-white/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
     style={{ 
-      top: menuVisible ? 'calc(env(safe-area-inset-top) + 72px)' : 'env(safe-area-inset-top)',
+      top: menuVisible ? 'calc(env(safe-area-inset-top) + 80px)' : 'env(safe-area-inset-top)',
       transition: 'top 0.3s ease'
     }}
   >
@@ -505,15 +505,15 @@ export default function Player() {
       )}
 
       <div 
-        className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
-        style={{ 
-          paddingTop: sections.length > 0 
-            ? (menuVisible ? 'calc(env(safe-area-inset-top) + 130px)' : 'calc(env(safe-area-inset-top) + 60px)')
-            : (menuVisible ? 'calc(env(safe-area-inset-top) + 80px)' : 'env(safe-area-inset-top)')
-        }}
-        onClick={toggleMenu}
-        ref={contentRef}
-      >
+  className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
+  style={{ 
+    paddingTop: sections.length > 0 
+      ? (menuVisible ? 'calc(env(safe-area-inset-top) + 150px)' : 'calc(env(safe-area-inset-top) + 70px)')
+      : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)')
+  }}
+  onClick={toggleMenu}
+  ref={contentRef}
+>
         <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4">
           
           {!isOnline && (
