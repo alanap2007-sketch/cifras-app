@@ -14,19 +14,25 @@ const SECTION_KEYWORDS = [
 const CHORD_REGEX = /^[A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
 // Verifica se uma palavra é um acorde
+// Verifica se uma palavra é um acorde
 const isChord = (word) => {
-  const clean = word.replace(/[\[\]]/g, '').trim()
+  const clean = word.replace(/[\[\]\(\)]/g, '').trim()
   if (!clean) return false
   return CHORD_REGEX.test(clean)
 }
 
-// Verifica se uma linha é APENAS acordes (pode ter espaços entre eles)
+// Verifica se uma linha é APENAS acordes
 const isChordLine = (line) => {
-  const trimmed = line.trim()
+  let trimmed = line.trim()
   if (!trimmed) return false
   
+  // Remove parênteses externos se houver (ex: "( B2 C#2 D#m7 )")
+  if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+    trimmed = trimmed.slice(1, -1).trim()
+  }
+  
   // Divide por espaços e verifica se cada parte é um acorde
-  const parts = trimmed.split(/\s+/)
+  const parts = trimmed.split(/\s+/).filter(p => p !== '')
   if (parts.length === 0) return false
   
   // Todas as partes devem ser acordes válidos
@@ -258,18 +264,40 @@ export default function Player() {
 
   const contentGroups = groupContentBySections()
 
-  // Renderiza uma linha
   const renderLine = (line) => {
-  // NÃO faz trim - preserva espaços originais!
-  
   // Linha vazia ou só espaços
   if (!line || line.trim() === '') {
     return <div style={{ height: `${fontSize * 0.4}px` }}></div>
   }
   
-  // Verifica se é linha de acordes (sem trim para preservar posição)
-  const trimmedForCheck = line.trim()
-  if (isChordLine(trimmedForCheck)) {
+  // Verifica se é linha de acordes (com ou sem parênteses)
+  let checkLine = line.trim()
+  
+  // Remove parênteses externos para verificação
+  if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
+    const innerContent = checkLine.slice(1, -1).trim()
+    const parts = innerContent.split(/\s+/).filter(p => p !== '')
+    if (parts.length > 0 && parts.every(p => isChord(p))) {
+      return (
+        <div 
+          className="font-mono font-bold" 
+          style={{ 
+            fontSize: `${fontSize}px`, 
+            color: '#f97316',
+            lineHeight: 1.3,
+            marginBottom: '2px',
+            whiteSpace: 'pre',
+            fontFamily: 'monospace'
+          }}
+        >
+          {line}
+        </div>
+      )
+    }
+  }
+  
+  // Verifica linha normal de acordes
+  if (isChordLine(checkLine)) {
     return (
       <div 
         className="font-mono font-bold" 
@@ -282,12 +310,12 @@ export default function Player() {
           fontFamily: 'monospace'
         }}
       >
-        {line} {/* USA line ORIGINAL, não trimmed! */}
+        {line}
       </div>
     )
   }
   
-  // Linha de letra (pode ter acordes entre colchetes)
+  // Linha de letra com acordes entre colchetes
   const hasInlineChords = /\[[^\]]+\]/.test(line)
   
   if (hasInlineChords) {
@@ -317,7 +345,7 @@ export default function Player() {
     )
   }
 
-  // Linha de letra normal - PRESERVA ESPAÇOS ORIGINAIS
+  // Linha de letra normal
   return (
     <div 
       className="font-mono" 
@@ -329,7 +357,7 @@ export default function Player() {
         color: isLightTheme ? '#1a1a1a' : undefined
       }}
     >
-      {line} {/* USA line ORIGINAL! */}
+      {line}
     </div>
   )
 }
