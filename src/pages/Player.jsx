@@ -10,6 +10,19 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
+// Regex para identificar acordes
+const CHORD_REGEX = /^([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)$/i
+
+// Verifica se uma linha é só acordes
+const isChordLine = (line) => {
+  const trimmed = line.trim()
+  if (!trimmed) return false
+  // Divide por espaços e verifica se cada parte é um acorde válido
+  const parts = trimmed.split(/\s+/)
+  if (parts.length === 0) return false
+  return parts.every(part => CHORD_REGEX.test(part))
+}
+
 export default function Player() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -246,25 +259,47 @@ export default function Player() {
 
   const contentGroups = groupContentBySections()
 
-  const renderLine = (line, i) => {
-    const hasBrackets = line.includes('[') && line.includes(']')
-    if (hasBrackets) {
+  // Renderiza uma linha (acorde ou letra)
+  const renderLine = (line) => {
+    const trimmed = line.trim()
+    
+    // Linha vazia
+    if (!trimmed) {
+      return <div style={{ height: `${fontSize * 0.5}px` }}></div>
+    }
+    
+    // Linha de acordes (só acordes)
+    if (isChordLine(trimmed)) {
+      const chords = trimmed.split(/\s+/)
       return (
-        <div className="font-mono leading-loose whitespace-pre-wrap" style={{ fontSize: `${fontSize}px` }}>
-          {line.split(/(\[.+?\])/g).map((part, j) =>
-            part.startsWith('[') ? (
-              <span key={j} className="font-bold" style={{ color: '#f97316' }}>
-                {part.replace(/[\[\]]/g, '')}
-              </span>
-            ) : (
-              <span key={j}>{part}</span>
-            )
-          )}
+        <div 
+          className="font-mono font-bold tracking-wide" 
+          style={{ 
+            fontSize: `${fontSize}px`, 
+            color: '#f97316',
+            lineHeight: 1.2,
+            marginBottom: '2px'
+          }}
+        >
+          {chords.map((chord, idx) => (
+            <span key={idx} className="inline-block mr-4">
+              {chord}
+            </span>
+          ))}
         </div>
       )
     }
+    
+    // Linha de letra
     return (
-      <div className="font-mono leading-loose whitespace-pre-wrap" style={{ fontSize: `${fontSize}px`, color: isLightTheme ? '#1a1a1a' : undefined }}>
+      <div 
+        className="font-mono whitespace-pre-wrap" 
+        style={{ 
+          fontSize: `${fontSize}px`, 
+          color: isLightTheme ? '#1a1a1a' : undefined,
+          lineHeight: 1.4
+        }}
+      >
         {line}
       </div>
     )
@@ -356,7 +391,7 @@ export default function Player() {
             </div>
 
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center`}>️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center`}>⚙️</button>
               {showSettings && (
                 <div className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-3 min-w-[200px]`} onClick={(e) => e.stopPropagation()}>
                   <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>⚙️ Configurações</div>
@@ -387,12 +422,13 @@ export default function Player() {
         </div>
       </div>
 
-      {/* BARRA 2 - Seções (SEMPRE FIXA, independente da barra 1) */}
+      {/* BARRA 2 - Seções (SEMPRE VISÍVEL, nunca some) */}
       {sections.length > 0 && (
         <div 
-          className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-gray-50/95' : 'bg-bg/95'} backdrop-blur-lg border-b ${borderColor} shadow-md transition-all duration-300`}
+          className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-gray-50/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
           style={{ 
-            top: menuVisible ? 'calc(env(safe-area-inset-top) + 70px)' : 'env(safe-area-inset-top)',
+            top: menuVisible ? 'calc(env(safe-area-inset-top) + 72px)' : 'env(safe-area-inset-top)',
+            transition: 'top 0.3s ease'
           }}
         >
           <div className="px-2 py-2">
@@ -423,8 +459,11 @@ export default function Player() {
       {!menuVisible && (
         <button
           onClick={toggleMenu}
-          className="fixed top-4 right-4 z-50 w-10 h-10 bg-accent/80 hover:bg-accent text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-          style={{ top: 'calc(env(safe-area-inset-top) + 10px)' }}
+          className="fixed z-50 w-10 h-10 bg-accent/80 hover:bg-accent text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+          style={{ 
+            top: 'calc(env(safe-area-inset-top) + 10px)',
+            right: '10px'
+          }}
         >
           ☰
         </button>
@@ -435,7 +474,7 @@ export default function Player() {
         className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
         style={{ 
           paddingTop: sections.length > 0 
-            ? (menuVisible ? 'calc(env(safe-area-inset-top) + 140px)' : 'calc(env(safe-area-inset-top) + 70px)')
+            ? (menuVisible ? 'calc(env(safe-area-inset-top) + 130px)' : 'calc(env(safe-area-inset-top) + 60px)')
             : (menuVisible ? 'calc(env(safe-area-inset-top) + 80px)' : 'env(safe-area-inset-top)')
         }}
         onClick={toggleMenu}
@@ -470,30 +509,31 @@ export default function Player() {
           <div className="space-y-3">
             {contentGroups.map((group, gIdx) => {
               if (group.type === 'section' && group.section) {
-                // Renderiza o cabeçalho da seção como CARD
                 return (
-                  <div key={`group-${gIdx}`}>
-                    <div 
-                      id={group.section.id}
-                      className={`${surfaceColor} border ${borderColor} rounded-xl p-4 scroll-mt-32`}
-                    >
-                      <div className="inline-block bg-accent/20 border border-accent/50 text-accent font-bold px-4 py-2 rounded-lg text-sm uppercase tracking-wide mb-3">
+                  <div 
+                    key={`group-${gIdx}`}
+                    id={group.section.id}
+                    className={`${surfaceColor} border ${borderColor} rounded-xl p-4 md:p-5 scroll-mt-32`}
+                  >
+                    {/* Título da seção */}
+                    <div className="mb-3">
+                      <span className="inline-block bg-accent/20 border border-accent/50 text-accent font-bold px-4 py-2 rounded-lg text-sm uppercase tracking-wide">
                         {group.section.name}
-                      </div>
-                      <div className="space-y-1">
-                        {group.lines.map((line, lIdx) => (
-                          <div key={lIdx}>{renderLine(line.text, line.index)}</div>
-                        ))}
-                      </div>
+                      </span>
+                    </div>
+                    {/* Linhas da seção */}
+                    <div className="space-y-1">
+                      {group.lines.map((line, lIdx) => (
+                        <div key={lIdx}>{renderLine(line.text)}</div>
+                      ))}
                     </div>
                   </div>
                 )
               } else {
-                // Renderiza linhas soltas (antes da primeira seção)
                 return (
                   <div key={`group-${gIdx}`} className={`${surfaceColor} border ${borderColor} rounded-xl p-4 md:p-6 space-y-1`}>
                     {group.lines.map((line, lIdx) => (
-                      <div key={lIdx}>{renderLine(line.text, line.index)}</div>
+                      <div key={lIdx}>{renderLine(line.text)}</div>
                     ))}
                   </div>
                 )
