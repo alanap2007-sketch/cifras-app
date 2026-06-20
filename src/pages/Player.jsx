@@ -11,26 +11,26 @@ const SECTION_KEYWORDS = [
 ]
 
 // Regex para acordes
-const CHORD_REGEX = /^[A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
+// Regex CORRIGIDA - versões compostas ANTES das simples
+const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
-// Verifica se uma palavra é um acorde (remove parênteses e colchetes)
+// Verifica se uma palavra é um acorde
 const isChord = (word) => {
   const clean = word.replace(/[\[\]\(\)]/g, '').trim()
   if (!clean) return false
   return CHORD_REGEX.test(clean)
 }
 
-// Verifica se uma linha é APENAS acordes (com ou sem parênteses)
+// Verifica se uma linha é APENAS acordes
 const isChordLine = (line) => {
   let checkLine = line.trim()
   if (!checkLine) return false
   
-  // Remove parênteses externos se houver
+  // Remove parênteses externos
   if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
     checkLine = checkLine.slice(1, -1).trim()
   }
   
-  // Divide por espaços e verifica cada parte
   const parts = checkLine.split(/\s+/).filter(p => p !== '')
   if (parts.length === 0) return false
   
