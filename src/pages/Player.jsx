@@ -10,14 +10,17 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-const CHORD_REGEX = /^\[?([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)\]?$/i
+// Regex para identificar acordes (com ou sem colchetes)
+const CHORD_PATTERN = /\[?([A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*)\]?/gi
 
-const isChordLine = (line) => {
+// Verifica se uma linha é APENAS acordes (sem texto de letra)
+const isChordOnlyLine = (line) => {
   const trimmed = line.trim()
   if (!trimmed) return false
-  const parts = trimmed.split(/\s+/)
-  if (parts.length === 0) return false
-  return parts.every(part => CHORD_REGEX.test(part))
+  // Remove acordes (com ou sem colchetes) e espaços
+  const withoutChords = trimmed.replace(CHORD_PATTERN, '').replace(/[\[\]]/g, '').trim()
+  // Se não sobrou nada além de espaços, é linha de acordes
+  return withoutChords === '' || /^[\s]+$/.test(withoutChords)
 }
 
 export default function Player() {
@@ -178,18 +181,18 @@ export default function Player() {
 
   const startAutoScroll = () => {
     setAutoScroll(true)
-    // Scroll MUITO lento - a cada 100ms
+    // Scroll BEM lento - a cada 100ms
     animationRef.current = setInterval(() => {
-      // Velocidade base: 10px/seg + ajuste (muito mais lento)
-      const pixelsPerSecond = 10 + (scrollSpeedRef.current * 5)
-      const scrollAmount = pixelsPerSecond / 10 // divide por 10 (scroll a cada 100ms)
+      // Velocidade base: 5px/seg + ajuste mínimo
+      const pixelsPerSecond = 5 + (scrollSpeedRef.current * 2)
+      const scrollAmount = pixelsPerSecond / 10
       
       window.scrollBy(0, scrollAmount)
       
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
         stopAutoScroll()
       }
-    }, 100) // 100ms = 10 vezes por segundo (mais lento)
+    }, 100)
   }
 
   const stopAutoScroll = () => {
@@ -250,17 +253,49 @@ export default function Player() {
 
   const contentGroups = groupContentBySections()
 
-  // Renderiza uma linha preservando o alinhamento
+  // Renderiza uma linha preservando o alinhamento EXATO
   const renderLine = (line) => {
     const trimmed = line.trim()
     
+    // Linha vazia
     if (!trimmed) {
-      return <div style={{ height: `${fontSize * 0.3}px` }}></div>
+      return <div style={{ height: `${fontSize * 0.4}px` }}></div>
     }
     
-    // Verifica se é linha de acordes (só tem acordes)
-    if (isChordLine(trimmed)) {
-      const chords = trimmed.split(/\s+/)
+    // Linha de acordes (só tem acordes, sem letra)
+    if (isChordOnlyLine(trimmed)) {
+      // Mantém o espaçamento original com whiteSpace: 'pre'
+      // Substitui acordes entre colchetes [Am] por versão colorida
+      const parts = trimmed.split(/(\[[^\]]+\])/g)
+      
+      if (parts.some(p => p.startsWith('['))) {
+        // Tem colchetes - renderiza com cores
+        return (
+          <div 
+            className="font-mono font-bold" 
+            style={{ 
+              fontSize: `${fontSize}px`, 
+              lineHeight: 1.3,
+              marginBottom: '2px',
+              whiteSpace: 'pre',
+              fontFamily: 'monospace'
+            }}
+          >
+            {parts.map((part, i) => {
+              if (part.startsWith('[') && part.endsWith(']')) {
+                return (
+                  <span key={i} style={{ color: '#f97316' }}>
+                    {part.replace(/[\[\]]/g, '')}
+                  </span>
+                )
+              }
+              return <span key={i} style={{ color: '#f97316' }}>{part}</span>
+            })}
+          </div>
+        )
+      }
+      
+      // Sem colchetes - tudo laranja mantendo espaçamento
       return (
         <div 
           className="font-mono font-bold" 
@@ -269,31 +304,28 @@ export default function Player() {
             color: '#f97316',
             lineHeight: 1.3,
             marginBottom: '2px',
-            whiteSpace: 'pre'
+            whiteSpace: 'pre',
+            fontFamily: 'monospace'
           }}
         >
-          {chords.map((chord, idx) => {
-            const cleanChord = chord.replace(/[\[\]]/g, '')
-            return (
-              <span key={idx} className="inline-block" style={{ minWidth: '60px', marginRight: '10px' }}>
-                {cleanChord}
-              </span>
-            )
-          })}
+          {trimmed}
         </div>
       )
     }
     
-    // Verifica se tem acordes inline entre colchetes
-    const inlineChordRegex = /(\[[^\]]+\])/g
-    if (inlineChordRegex.test(trimmed)) {
-      const parts = trimmed.split(inlineChordRegex).filter(p => p)
+    // Linha de letra (pode ter acordes entre colchetes inline)
+    const hasInlineChords = /\[[^\]]+\]/.test(trimmed)
+    
+    if (hasInlineChords) {
+      const parts = trimmed.split(/(\[[^\]]+\])/g).filter(p => p !== '')
       return (
         <div 
-          className="font-mono whitespace-pre" 
+          className="font-mono" 
           style={{ 
             fontSize: `${fontSize}px`, 
             lineHeight: 1.4,
+            whiteSpace: 'pre',
+            fontFamily: 'monospace',
             color: isLightTheme ? '#1a1a1a' : undefined
           }}
         >
@@ -311,13 +343,16 @@ export default function Player() {
       )
     }
 
-    // Linha de letra normal
+    // Linha de letra normal (sem acordes)
     return (
       <div 
-        className={`font-mono whitespace-pre ${isLightTheme ? 'text-gray-900' : 'text-text'}`} 
+        className="font-mono" 
         style={{ 
           fontSize: `${fontSize}px`, 
-          lineHeight: 1.4
+          lineHeight: 1.4,
+          whiteSpace: 'pre',
+          fontFamily: 'monospace',
+          color: isLightTheme ? '#1a1a1a' : undefined
         }}
       >
         {line}
@@ -327,7 +362,7 @@ export default function Player() {
 
   return (
     <>
-      {/* BARRA 1 - Controles (some ao clicar na tela) */}
+      {/* BARRA 1 - Controles */}
       <div 
         className={`fixed top-0 left-0 right-0 z-50 ${isLightTheme ? 'bg-white/95' : 'bg-surface/95'} backdrop-blur-lg border-b ${borderColor} shadow-lg transition-all duration-300 ${
           menuVisible ? 'translate-y-0' : '-translate-y-full'
@@ -355,7 +390,7 @@ export default function Player() {
                   onClick={(e) => { e.stopPropagation(); setShowKeyDropdown(!showKeyDropdown); setShowCapoDropdown(false); setShowSettings(false) }}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${selectedKey === effectiveKey ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`}`}
                 >
-                  <span>🎼</span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
+                  <span></span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showKeyDropdown && (
                   <div className={`absolute top-full left-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[240px]`} onClick={(e) => e.stopPropagation()}>
@@ -374,7 +409,7 @@ export default function Player() {
                   onClick={(e) => { e.stopPropagation(); setShowCapoDropdown(!showCapoDropdown); setShowKeyDropdown(false); setShowSettings(false) }}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${capo === 0 ? `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent2'} border border-accent2/40` : 'bg-accent2 text-white'}`}
                 >
-                  <span>🎸</span><span>{capo === 0 ? 'Off' : `${capo}ª`}</span><span className="text-[10px]">▼</span>
+                  <span></span><span>{capo === 0 ? 'Off' : `${capo}ª`}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showCapoDropdown && (
                   <div className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[200px]`} onClick={(e) => e.stopPropagation()}>
@@ -442,7 +477,7 @@ export default function Player() {
         </div>
       </div>
 
-      {/* BARRA 2 - Seções (SEMPRE VISÍVEL) */}
+      {/* BARRA 2 - Seções */}
       {sections.length > 0 && (
         <div 
           className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-gray-50/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
@@ -473,7 +508,6 @@ export default function Player() {
         </div>
       )}
 
-      {/* Botão flutuante */}
       {!menuVisible && (
         <button
           onClick={toggleMenu}
@@ -487,7 +521,6 @@ export default function Player() {
         </button>
       )}
 
-      {/* CONTEÚDO */}
       <div 
         className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
         style={{ 
