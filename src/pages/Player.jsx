@@ -13,22 +13,22 @@ const SECTION_KEYWORDS = [
 // Regex para acordes
 // Regex CORRIGIDA - versões compostas ANTES das simples
 // Regex CORRIGIDA
+// Regex para acordes - CORRIGIDA
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
-// Verifica se uma palavra é um acorde
+// Verifica se uma palavra é um acorde - CORRIGIDO
 const isChord = (word) => {
   const clean = word.replace(/[\[\]\(\)]/g, '').trim()
   if (!clean) return false
   return CHORD_REGEX.test(clean)
 }
 
-// Verifica se uma linha é APENAS acordes
-// Verifica se uma linha é APENAS acordes
+// Verifica se uma linha é APENAS acordes - CORRIGIDO
 const isChordLine = (line) => {
   let checkLine = line.trim()
   if (!checkLine) return false
   
-  // Remove barras verticais | no final (ex: "F#   |")
+  // Remove barras verticais | no final - CORRIGIDO
   checkLine = checkLine.replace(/\|+$/g, '').trim()
   
   // Remove parênteses externos
@@ -275,7 +275,7 @@ export default function Player() {
   
   let checkLine = line.trim()
   
-  // Verifica se é linha de acordes (com ou sem parênteses)
+  // Verifica se é linha de acordes
   if (isChordLine(checkLine)) {
     return (
       <div 
@@ -294,7 +294,7 @@ export default function Player() {
     )
   }
   
-  // Linha de letra com acordes entre colchetes
+  // Linha de letra com acordes entre colchetes - CORRIGIDO
   const hasInlineChords = /\[[^\]]+\]/.test(line)
   
   if (hasInlineChords) {
@@ -340,7 +340,6 @@ export default function Player() {
     </div>
   )
 }
-
   return (
     <>
       {/* BARRA 1 - Controles */}
