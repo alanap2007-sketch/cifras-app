@@ -10,32 +10,30 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-// Regex para identificar acordes individuais
+// Regex para acordes
 const CHORD_REGEX = /^[A-G][#b]?(?:m|maj|dim|aug|sus[24]?|7|maj7|m7|dim7|aug7|add[2469])?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
-// Verifica se uma palavra é um acorde
-// Verifica se uma palavra é um acorde
+// Verifica se uma palavra é um acorde (remove parênteses e colchetes)
 const isChord = (word) => {
   const clean = word.replace(/[\[\]\(\)]/g, '').trim()
   if (!clean) return false
   return CHORD_REGEX.test(clean)
 }
 
-// Verifica se uma linha é APENAS acordes
+// Verifica se uma linha é APENAS acordes (com ou sem parênteses)
 const isChordLine = (line) => {
-  let trimmed = line.trim()
-  if (!trimmed) return false
+  let checkLine = line.trim()
+  if (!checkLine) return false
   
-  // Remove parênteses externos se houver (ex: "( B2 C#2 D#m7 )")
-  if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
-    trimmed = trimmed.slice(1, -1).trim()
+  // Remove parênteses externos se houver
+  if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
+    checkLine = checkLine.slice(1, -1).trim()
   }
   
-  // Divide por espaços e verifica se cada parte é um acorde
-  const parts = trimmed.split(/\s+/).filter(p => p !== '')
+  // Divide por espaços e verifica cada parte
+  const parts = checkLine.split(/\s+/).filter(p => p !== '')
   if (parts.length === 0) return false
   
-  // Todas as partes devem ser acordes válidos
   return parts.every(part => isChord(part))
 }
 
@@ -265,38 +263,14 @@ export default function Player() {
   const contentGroups = groupContentBySections()
 
   const renderLine = (line) => {
-  // Linha vazia ou só espaços
+  // Linha vazia
   if (!line || line.trim() === '') {
     return <div style={{ height: `${fontSize * 0.4}px` }}></div>
   }
   
-  // Verifica se é linha de acordes (com ou sem parênteses)
   let checkLine = line.trim()
   
-  // Remove parênteses externos para verificação
-  if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
-    const innerContent = checkLine.slice(1, -1).trim()
-    const parts = innerContent.split(/\s+/).filter(p => p !== '')
-    if (parts.length > 0 && parts.every(p => isChord(p))) {
-      return (
-        <div 
-          className="font-mono font-bold" 
-          style={{ 
-            fontSize: `${fontSize}px`, 
-            color: '#f97316',
-            lineHeight: 1.3,
-            marginBottom: '2px',
-            whiteSpace: 'pre',
-            fontFamily: 'monospace'
-          }}
-        >
-          {line}
-        </div>
-      )
-    }
-  }
-  
-  // Verifica linha normal de acordes
+  // Verifica se é linha de acordes (com ou sem parênteses)
   if (isChordLine(checkLine)) {
     return (
       <div 
