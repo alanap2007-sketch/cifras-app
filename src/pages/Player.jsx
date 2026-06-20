@@ -458,35 +458,38 @@ export default function Player() {
       </div>
 
       {/* BARRA 2 - Seções */}
-      {sections.length > 0 && (
-        <div 
-          className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-gray-50/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
-          style={{ 
-            top: menuVisible ? 'calc(env(safe-area-inset-top) + 72px)' : 'env(safe-area-inset-top)',
-            transition: 'top 0.3s ease'
-          }}
-        >
-          <div className="px-2 py-2">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex gap-1.5 overflow-x-auto justify-center flex-wrap">
-                {sections.map((section, idx) => (
-                  <button
-                    key={section.id}
-                    onClick={() => scrollToSection(section)}
-                    className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
-                      activeSection === section.id
-                        ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
-                        : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
-                    }`}
-                  >
-                    {section.name.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+      {/* BARRA 2 - Seções */}
+{sections.length > 0 && (
+  <div 
+    className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-white/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
+    style={{ 
+      top: menuVisible ? 'calc(env(safe-area-inset-top) + 72px)' : 'env(safe-area-inset-top)',
+      transition: 'top 0.3s ease'
+    }}
+  >
+    <div className="px-2 py-2">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex gap-1.5 overflow-x-auto justify-center flex-wrap">
+          {sections.map((section, idx) => (
+            <button
+              key={section.id}
+              onClick={() => scrollToSection(section)}
+              className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
+                activeSection === section.id
+                  ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
+                  : isLightTheme
+                    ? 'bg-white text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
+                    : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
+              }`}
+            >
+              {section.name.toUpperCase()}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
 
       {!menuVisible && (
         <button
