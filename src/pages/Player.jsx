@@ -77,10 +77,8 @@ export default function Player() {
     return localStorage.getItem('cifrabox_theme') || 'dark'
   })
   const [autoFontSize, setAutoFontSize] = useState(true)
-  const [wakeLock, setWakeLock] = useState(null)
 
   const contentRef = useRef(null)
-  const sectionRefs = useRef({})
 
   // Salva configurações quando mudam
   useEffect(() => {
@@ -94,28 +92,6 @@ export default function Player() {
   useEffect(() => {
     localStorage.setItem('cifrabox_theme', theme)
   }, [theme])
-
-  // Mantém tela ligada
-  useEffect(() => {
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          const lock = await navigator.wakeLock.request('screen')
-          setWakeLock(lock)
-        }
-      } catch (err) {
-        console.log('Wake Lock não suportado')
-      }
-    }
-    
-    requestWakeLock()
-    
-    return () => {
-      if (wakeLock) {
-        wakeLock.release()
-      }
-    }
-  }, [])
 
   useEffect(() => {
     scrollSpeedRef.current = scrollSpeed
@@ -163,7 +139,7 @@ export default function Player() {
   // Detecta seção ativa durante scroll
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPosition = window.scrollY + 200
+      const scrollPosition = window.scrollY + 250
       
       sections.forEach(section => {
         const element = document.getElementById(section.id)
@@ -268,7 +244,6 @@ export default function Player() {
   const startAutoScroll = () => {
     setAutoScroll(true)
     animationRef.current = setInterval(() => {
-      // Velocidade mais suave: 1-50 range
       const pixelsPerSecond = 2 + (scrollSpeedRef.current * 1.5)
       const scrollAmount = pixelsPerSecond / 10
       window.scrollBy(0, scrollAmount)
@@ -299,8 +274,8 @@ export default function Player() {
   }
 
   const handleBack = () => {
-    // Volta para a página anterior (setlist ou home)
-    if (location.state?.from === 'setlist') {
+    // Verifica se veio de um setlist
+    if (location.state?.from === 'setlist' || document.referrer.includes('setlist')) {
       navigate(-1)
     } else {
       navigate('/')
@@ -534,7 +509,7 @@ export default function Player() {
         </div>
       </div>
 
-      {/* BARRA 2 - Seções (SEMPRE FIXA) */}
+      {/* BARRA 2 - Seções (SEMPRE FIXA) - CORRIGIDA */}
       {sections.length > 0 && (
         <div 
           className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-white/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
@@ -545,7 +520,8 @@ export default function Player() {
         >
           <div className="px-2 py-2">
             <div className="max-w-5xl mx-auto">
-              <div className="flex gap-1.5 overflow-x-auto justify-center flex-wrap items-center">
+              {/* Scroll horizontal para muitas seções */}
+              <div className="flex gap-1.5 overflow-x-auto justify-start flex-nowrap pb-1" style={{ scrollbarWidth: 'thin' }}>
                 {sections.map((section, idx) => (
                   <button
                     key={section.id}
@@ -563,7 +539,7 @@ export default function Player() {
                 ))}
                 
                 {/* BPM na barra 2 */}
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${surface2Color} border ${borderColor} ml-2`}>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${surface2Color} border ${borderColor} ml-2 flex-shrink-0`}>
                   <div className="flex gap-1">
                     {[0, 1, 2, 3].map(beat => (
                       <div
