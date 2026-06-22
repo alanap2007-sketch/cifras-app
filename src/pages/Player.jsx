@@ -206,7 +206,7 @@ export default function Player() {
   
   if (fromState === 'setlist' || fromStorage === 'true') {
     sessionStorage.removeItem('cifrabox_fromSetlist')
-    navigate('/setlist')  // <-- Troque aqui pela rota REAL do seu setlist
+    navigate('/setlists')  // <-- Troque aqui pela rota REAL do seu setlist
   } else {
     navigate('/')
   }
