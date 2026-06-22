@@ -274,13 +274,13 @@ export default function Player() {
   }
 
   const handleBack = () => {
-    // Verifica se veio de um setlist
-    if (location.state?.from === 'setlist' || document.referrer.includes('setlist')) {
-      navigate(-1)
-    } else {
-      navigate('/')
-    }
+  // Se veio do setlist, volta para o setlist
+  if (location.state?.from === 'setlist') {
+    navigate(-1)
+  } else {
+    navigate('/')
   }
+}
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-accent text-xl">Carregando...</div></div>
   if (!song) return null
@@ -403,11 +403,11 @@ export default function Player() {
             
             <div className="flex items-center gap-2">
               <button 
-                onClick={handleBack}
-                className={`w-10 h-10 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-base flex items-center justify-center flex-shrink-0`}
-              >
-                ←
-              </button>
+  onClick={handleBack}
+  className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center flex-shrink-0`}
+>
+  ←
+</button>
               <div className={`flex items-center ${surface2Color} rounded-lg border ${borderColor} overflow-hidden`}>
                 <button onClick={() => setFontSize(s => Math.max(12, s - 2))} className={`w-10 h-10 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}>A-</button>
                 <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
