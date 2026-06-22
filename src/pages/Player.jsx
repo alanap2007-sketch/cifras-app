@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getCachedSongs } from '../services/cache'
 import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
@@ -10,28 +10,24 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-// Regex para acordes
-// Regex CORRIGIDA - versões compostas ANTES das simples
-// Regex CORRIGIDA
-// Regex para acordes - CORRIGIDA
+// Regex CORRIGIDA para acordes
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
-// Verifica se uma palavra é um acorde - CORRIGIDO
 const isChord = (word) => {
   const clean = word.replace(/[\[\]\(\)]/g, '').trim()
   if (!clean) return false
   return CHORD_REGEX.test(clean)
 }
 
-// Verifica se uma linha é APENAS acordes - CORRIGIDO
 const isChordLine = (line) => {
   let checkLine = line.trim()
   if (!checkLine) return false
   
-  // Remove barras verticais | no final - CORRIGIDO
+  // Remove barras verticais | no final
   checkLine = checkLine.replace(/\|+$/g, '').trim()
+  // Remove "2x", "3x" no final
+  checkLine = checkLine.replace(/\s*\d+x\s*$/i, '').trim()
   
-  // Remove parênteses externos
   if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
     checkLine = checkLine.slice(1, -1).trim()
   }
@@ -45,13 +41,20 @@ const isChordLine = (line) => {
 export default function Player() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  
   const [song, setSong] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedKey, setSelectedKey] = useState('C')
   const [originalKey, setOriginalKey] = useState('C')
   const [originalCapo, setOriginalCapo] = useState(0)
   const [capo, setCapo] = useState(0)
-  const [fontSize, setFontSize] = useState(18)
+  
+  // Carrega configurações salvas ou usa padrão
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('cifrabox_fontSize')
+    return saved ? parseInt(saved) : 18
+  })
   const [sections, setSections] = useState([])
   const [activeSection, setActiveSection] = useState(null)
   
@@ -60,17 +63,59 @@ export default function Player() {
   const [showSettings, setShowSettings] = useState(false)
   
   const [autoScroll, setAutoScroll] = useState(false)
-  const [scrollSpeed, setScrollSpeed] = useState(2)
+  const [scrollSpeed, setScrollSpeed] = useState(() => {
+    const saved = localStorage.getItem('cifrabox_scrollSpeed')
+    return saved ? parseInt(saved) : 5
+  })
   const scrollSpeedRef = useRef(scrollSpeed)
   const animationRef = useRef(null)
 
   const [beatCount, setBeatCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [menuVisible, setMenuVisible] = useState(true)
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('cifrabox_theme') || 'dark'
+  })
   const [autoFontSize, setAutoFontSize] = useState(true)
+  const [wakeLock, setWakeLock] = useState(null)
 
   const contentRef = useRef(null)
+  const sectionRefs = useRef({})
+
+  // Salva configurações quando mudam
+  useEffect(() => {
+    localStorage.setItem('cifrabox_fontSize', fontSize)
+  }, [fontSize])
+
+  useEffect(() => {
+    localStorage.setItem('cifrabox_scrollSpeed', scrollSpeed)
+  }, [scrollSpeed])
+
+  useEffect(() => {
+    localStorage.setItem('cifrabox_theme', theme)
+  }, [theme])
+
+  // Mantém tela ligada
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          const lock = await navigator.wakeLock.request('screen')
+          setWakeLock(lock)
+        }
+      } catch (err) {
+        console.log('Wake Lock não suportado')
+      }
+    }
+    
+    requestWakeLock()
+    
+    return () => {
+      if (wakeLock) {
+        wakeLock.release()
+      }
+    }
+  }, [])
 
   useEffect(() => {
     scrollSpeedRef.current = scrollSpeed
@@ -114,6 +159,28 @@ export default function Player() {
     fetchSong()
     return () => stopAutoScroll()
   }, [id])
+
+  // Detecta seção ativa durante scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 200
+      
+      sections.forEach(section => {
+        const element = document.getElementById(section.id)
+        if (element) {
+          const elementTop = element.offsetTop
+          const elementBottom = elementTop + element.offsetHeight
+          
+          if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
+            setActiveSection(section.id)
+          }
+        }
+      })
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [sections])
 
   useEffect(() => {
     if (!autoFontSize) return
@@ -201,7 +268,8 @@ export default function Player() {
   const startAutoScroll = () => {
     setAutoScroll(true)
     animationRef.current = setInterval(() => {
-      const pixelsPerSecond = 5 + (scrollSpeedRef.current * 2)
+      // Velocidade mais suave: 1-50 range
+      const pixelsPerSecond = 2 + (scrollSpeedRef.current * 1.5)
       const scrollAmount = pixelsPerSecond / 10
       window.scrollBy(0, scrollAmount)
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
@@ -228,6 +296,15 @@ export default function Player() {
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible)
+  }
+
+  const handleBack = () => {
+    // Volta para a página anterior (setlist ou home)
+    if (location.state?.from === 'setlist') {
+      navigate(-1)
+    } else {
+      navigate('/')
+    }
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-accent text-xl">Carregando...</div></div>
@@ -268,37 +345,59 @@ export default function Player() {
   const contentGroups = groupContentBySections()
 
   const renderLine = (line) => {
-  // Linha vazia
-  if (!line || line.trim() === '') {
-    return <div style={{ height: `${fontSize * 0.4}px` }}></div>
-  }
-  
-  let checkLine = line.trim()
-  
-  // Verifica se é linha de acordes
-  if (isChordLine(checkLine)) {
-    return (
-      <div 
-        className="font-mono font-bold" 
-        style={{ 
-          fontSize: `${fontSize}px`, 
-          color: '#f97316',
-          lineHeight: 1.3,
-          marginBottom: '2px',
-          whiteSpace: 'pre',
-          fontFamily: 'monospace'
-        }}
-      >
-        {line}
-      </div>
-    )
-  }
-  
-  // Linha de letra com acordes entre colchetes - CORRIGIDO
-  const hasInlineChords = /\[[^\]]+\]/.test(line)
-  
-  if (hasInlineChords) {
-    const parts = line.split(/(\[[^\]]+\])/g).filter(p => p !== '')
+    if (!line || line.trim() === '') {
+      return <div style={{ height: `${fontSize * 0.4}px` }}></div>
+    }
+    
+    let checkLine = line.trim()
+    
+    if (isChordLine(checkLine)) {
+      return (
+        <div 
+          className="font-mono font-bold" 
+          style={{ 
+            fontSize: `${fontSize}px`, 
+            color: '#f97316',
+            lineHeight: 1.3,
+            marginBottom: '2px',
+            whiteSpace: 'pre',
+            fontFamily: 'monospace'
+          }}
+        >
+          {line}
+        </div>
+      )
+    }
+    
+    const hasInlineChords = /\[[^\]]+\]/.test(line)
+    
+    if (hasInlineChords) {
+      const parts = line.split(/(\[[^\]]+\])/g).filter(p => p !== '')
+      return (
+        <div 
+          className="font-mono" 
+          style={{ 
+            fontSize: `${fontSize}px`, 
+            lineHeight: 1.4,
+            whiteSpace: 'pre',
+            fontFamily: 'monospace',
+            color: isLightTheme ? '#1a1a1a' : undefined
+          }}
+        >
+          {parts.map((part, i) => {
+            if (part.startsWith('[') && part.endsWith(']')) {
+              return (
+                <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
+                  {part.replace(/[\[\]]/g, '')}
+                </span>
+              )
+            }
+            return <span key={i}>{part}</span>
+          })}
+        </div>
+      )
+    }
+
     return (
       <div 
         className="font-mono" 
@@ -310,36 +409,11 @@ export default function Player() {
           color: isLightTheme ? '#1a1a1a' : undefined
         }}
       >
-        {parts.map((part, i) => {
-          if (part.startsWith('[') && part.endsWith(']')) {
-            return (
-              <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>
-                {part.replace(/[\[\]]/g, '')}
-              </span>
-            )
-          }
-          return <span key={i}>{part}</span>
-        })}
+        {line}
       </div>
     )
   }
 
-  // Linha de letra normal
-  return (
-    <div 
-      className="font-mono" 
-      style={{ 
-        fontSize: `${fontSize}px`, 
-        lineHeight: 1.4,
-        whiteSpace: 'pre',
-        fontFamily: 'monospace',
-        color: isLightTheme ? '#1a1a1a' : undefined
-      }}
-    >
-      {line}
-    </div>
-  )
-}
   return (
     <>
       {/* BARRA 1 - Controles */}
@@ -350,25 +424,27 @@ export default function Player() {
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="px-2 py-2">
-          <div className="max-w-5xl mx-auto flex items-center gap-1.5 flex-wrap justify-between">
+          <div className="max-w-5xl mx-auto flex items-center gap-2 flex-wrap justify-between">
             
-            <div className="flex items-center gap-1.5">
-              <Link to="/" className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center flex-shrink-0`}>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleBack}
+                className={`w-10 h-10 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-base flex items-center justify-center flex-shrink-0`}
+              >
                 ←
-              </Link>
+              </button>
               <div className={`flex items-center ${surface2Color} rounded-lg border ${borderColor} overflow-hidden`}>
-                <button onClick={() => setFontSize(s => Math.max(12, s - 2))} className={`w-9 h-9 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}>A-</button>
+                <button onClick={() => setFontSize(s => Math.max(12, s - 2))} className={`w-10 h-10 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}>A-</button>
                 <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
-                <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className={`w-9 h-9 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}>A+</button>
+                <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className={`w-10 h-10 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}>A+</button>
               </div>
-              <span className={`text-xs font-mono ${mutedColor} px-1 hidden sm:inline`}>{fontSize}px</span>
             </div>
 
             <div className="flex items-center gap-1.5">
               <div className="relative">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowKeyDropdown(!showKeyDropdown); setShowCapoDropdown(false); setShowSettings(false) }}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${selectedKey === effectiveKey ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`}`}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ${selectedKey === effectiveKey ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`}`}
                 >
                   <span>🎼</span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
                 </button>
@@ -387,7 +463,7 @@ export default function Player() {
               <div className="relative">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowCapoDropdown(!showCapoDropdown); setShowKeyDropdown(false); setShowSettings(false) }}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-colors ${capo === 0 ? `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent2'} border border-accent2/40` : 'bg-accent2 text-white'}`}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ${capo === 0 ? `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent2'} border border-accent2/40` : 'bg-accent2 text-white'}`}
                 >
                   <span>🎸</span><span>{capo === 0 ? 'Off' : `${capo}ª`}</span><span className="text-[10px]">▼</span>
                 </button>
@@ -404,29 +480,30 @@ export default function Player() {
               </div>
             </div>
 
-            <div className={`flex items-center gap-1.5 ${surface2Color} rounded-lg px-1.5 py-1`}>
+            <div className={`flex items-center gap-2 ${surface2Color} rounded-lg px-2 py-1.5`}>
               {!autoScroll ? (
-                <button onClick={startAutoScroll} className="flex items-center gap-1 bg-accent hover:bg-accent/90 text-white text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"><span>▶</span></button>
+                <button
+                  onClick={startAutoScroll}
+                  className="flex items-center gap-1 bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+                >
+                  <span>▶</span><span>Auto</span>
+                </button>
               ) : (
-                <button onClick={stopAutoScroll} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-md transition-colors"><span></span></button>
+                <button
+                  onClick={stopAutoScroll}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+                >
+                  <span>⏸</span><span>Parar</span>
+                </button>
               )}
-              <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
-              <button onClick={() => setScrollSpeed(s => Math.max(1, s - 1))} className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}>-</button>
-              <span className={`text-[10px] font-mono ${isLightTheme ? 'text-gray-900' : 'text-text'} w-5 text-center`}>{scrollSpeed}</span>
-              <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={`w-7 h-7 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-xs font-bold`}>+</button>
-              <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
-              <div className="flex items-center gap-1.5 px-1">
-                <div className="flex gap-1">
-                  {[0, 1, 2, 3].map(beat => (
-                    <div key={beat} className="w-2 h-2 rounded-full transition-all duration-75" style={{ backgroundColor: beatCount === beat ? '#8b5cf6' : (isLightTheme ? '#d1d5db' : '#2a2a3a'), boxShadow: beatCount === beat ? '0 0 6px #8b5cf6' : 'none' }} />
-                  ))}
-                </div>
-                <span className={`text-[10px] font-mono ${isLightTheme ? 'text-gray-900 font-bold' : 'text-muted'}`}>{song.bpm}</span>
-              </div>
+              <div className={`w-px h-6 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
+              <button onClick={() => setScrollSpeed(s => Math.max(1, s - 1))} className={`w-8 h-8 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-sm font-bold`}>-</button>
+              <span className={`text-xs font-mono ${isLightTheme ? 'text-gray-900' : 'text-text'} w-6 text-center font-bold`}>{scrollSpeed}</span>
+              <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={`w-8 h-8 ${isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text'} rounded flex items-center justify-center text-sm font-bold`}>+</button>
             </div>
 
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center`}>⚙️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={`w-10 h-10 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-base flex items-center justify-center`}>⚙️</button>
               {showSettings && (
                 <div className={`absolute top-full right-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-3 min-w-[200px]`} onClick={(e) => e.stopPropagation()}>
                   <div className={`text-xs ${mutedColor} mb-3 font-semibold`}>⚙️ Configurações</div>
@@ -450,51 +527,69 @@ export default function Player() {
             </div>
 
             <div className="flex gap-1.5">
-              <button onClick={handleEdit} className="w-9 h-9 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors text-sm flex items-center justify-center">✏️</button>
-              <button onClick={handleDelete} className="w-9 h-9 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 rounded-lg transition-colors text-sm flex items-center justify-center">🗑️</button>
+              <button onClick={handleEdit} className="w-10 h-10 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors text-sm flex items-center justify-center">✏️</button>
+              <button onClick={handleDelete} className="w-10 h-10 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 rounded-lg transition-colors text-sm flex items-center justify-center">🗑️</button>
             </div>
           </div>
         </div>
       </div>
 
-    
-      {/* BARRA 2 - Seções */}
-{sections.length > 0 && (
-  <div 
-    className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-white/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
-    style={{ 
-      top: menuVisible ? 'calc(env(safe-area-inset-top) + 80px)' : 'env(safe-area-inset-top)',
-      transition: 'top 0.3s ease'
-    }}
-  >
-    <div className="px-2 py-2">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex gap-1.5 overflow-x-auto justify-center flex-wrap">
-          {sections.map((section, idx) => (
-            <button
-              key={section.id}
-              onClick={() => scrollToSection(section)}
-              className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
-                activeSection === section.id
-                  ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
-                  : isLightTheme
-                    ? 'bg-white text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
-                    : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
-              }`}
-            >
-              {section.name.toUpperCase()}
-            </button>
-          ))}
+      {/* BARRA 2 - Seções (SEMPRE FIXA) */}
+      {sections.length > 0 && (
+        <div 
+          className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-white/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
+          style={{ 
+            top: menuVisible ? 'calc(env(safe-area-inset-top) + 80px)' : 'env(safe-area-inset-top)',
+            transition: 'top 0.3s ease'
+          }}
+        >
+          <div className="px-2 py-2">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex gap-1.5 overflow-x-auto justify-center flex-wrap items-center">
+                {sections.map((section, idx) => (
+                  <button
+                    key={section.id}
+                    onClick={() => scrollToSection(section)}
+                    className={`px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ${
+                      activeSection === section.id
+                        ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105'
+                        : isLightTheme
+                          ? 'bg-white text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
+                          : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10'
+                    }`}
+                  >
+                    {section.name.toUpperCase()}
+                  </button>
+                ))}
+                
+                {/* BPM na barra 2 */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${surface2Color} border ${borderColor} ml-2`}>
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3].map(beat => (
+                      <div
+                        key={beat}
+                        className="w-3 h-3 rounded-full transition-all duration-75"
+                        style={{
+                          backgroundColor: beatCount === beat ? '#8b5cf6' : (isLightTheme ? '#d1d5db' : '#2a2a3a'),
+                          boxShadow: beatCount === beat ? '0 0 8px #8b5cf6' : 'none',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className={`text-sm font-mono font-bold ${isLightTheme ? 'text-gray-900' : 'text-muted'}`}>{song.bpm}</span>
+                  <span className={`text-xs ${mutedColor}`}>BPM</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
+      {/* Botão flutuante */}
       {!menuVisible && (
         <button
           onClick={toggleMenu}
-          className="fixed z-50 w-10 h-10 bg-accent/80 hover:bg-accent text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+          className="fixed z-50 w-12 h-12 bg-accent/80 hover:bg-accent text-white rounded-full shadow-lg flex items-center justify-center transition-all"
           style={{ 
             top: 'calc(env(safe-area-inset-top) + 10px)',
             right: '10px'
@@ -505,15 +600,15 @@ export default function Player() {
       )}
 
       <div 
-  className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
-  style={{ 
-    paddingTop: sections.length > 0 
-      ? (menuVisible ? 'calc(env(safe-area-inset-top) + 150px)' : 'calc(env(safe-area-inset-top) + 70px)')
-      : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)')
-  }}
-  onClick={toggleMenu}
-  ref={contentRef}
->
+        className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`}
+        style={{ 
+          paddingTop: sections.length > 0 
+            ? (menuVisible ? 'calc(env(safe-area-inset-top) + 160px)' : 'calc(env(safe-area-inset-top) + 70px)')
+            : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)')
+        }}
+        onClick={toggleMenu}
+        ref={contentRef}
+      >
         <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4">
           
           {!isOnline && (
@@ -547,7 +642,6 @@ export default function Player() {
                     id={group.section.id}
                     className={`${surfaceColor} border ${borderColor} rounded-xl p-4 md:p-5 scroll-mt-32`}
                   >
-                    {/* Título da seção - SEMPRE com o mesmo estilo */}
                     <div className="mb-3">
                       <span className="inline-block bg-accent/20 border border-accent/50 text-accent font-bold px-4 py-2 rounded-lg text-sm uppercase tracking-wide">
                         {group.section.name}
