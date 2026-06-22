@@ -68,7 +68,8 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
     return `${day}/${month}/${year}`
   }
 
-  const handleSongClick = (songId) => {
+  const handleSongClick = (songId, e) => {
+    e.stopPropagation()
     // Navega para a música passando que veio do setlist
     navigate(`/player/${songId}`, { state: { from: 'setlist' } })
   }
@@ -183,10 +184,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
 
                     {/* Info - USANDO BUTTON EM VEZ DE LINK */}
                     <button 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSongClick(song.id)
-                      }}
+                      onClick={(e) => handleSongClick(song.id, e)}
                       className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity"
                     >
                       <div className="font-semibold text-text truncate">{song.title}</div>
