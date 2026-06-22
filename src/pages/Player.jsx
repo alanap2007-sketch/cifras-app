@@ -316,7 +316,7 @@ export default function Player() {
                     <div>
                       <label className={`text-xs ${mutedColor} block mb-1`}>Tema</label>
                       <div className="flex gap-2">
-                        <button onClick={() => setTheme('dark')} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${theme === 'dark' ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`}`}> Escuro</button>
+                        <button onClick={() => setTheme('dark')} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${theme === 'dark' ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`}`}>🌙 Escuro</button>
                         <button onClick={() => setTheme('light')} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${theme === 'light' ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`}`}>☀️ Claro</button>
                       </div>
                     </div>
@@ -368,7 +368,7 @@ export default function Player() {
 
       <div className={`min-h-screen pb-10 ${bgColor} transition-colors duration-300`} style={{ paddingTop: sections.length > 0 ? (menuVisible ? 'calc(env(safe-area-inset-top) + 160px)' : 'calc(env(safe-area-inset-top) + 70px)') : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)') }} onClick={toggleMenu} ref={contentRef}>
         <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4">
-          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span></span><span>Modo offline - Usando dados salvos</span></div>)}
+          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span>📡</span><span>Modo offline - Usando dados salvos</span></div>)}
           <div className={`${surfaceColor} border ${borderColor} rounded-xl p-3 flex items-center justify-between flex-wrap gap-2`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className={`text-lg md:text-xl font-bold ${textColor} truncate`}>{song.title}</h1>

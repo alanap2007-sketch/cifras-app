@@ -67,7 +67,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             + Música
           </button>
           <button onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(!showConfirmDelete) }} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs rounded-lg transition-colors">
-            ️
+            🗑️
           </button>
         </div>
       </div>
