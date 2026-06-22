@@ -1,4 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import os
+
+# Player.jsx CORRIGIDO
+player_content = '''import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getCachedSongs } from '../services/cache'
@@ -6,10 +9,10 @@ import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemito
 
 const SECTION_KEYWORDS = ['intro', 'verso', 'refrao', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pre-refrao', 'pre-refrao', 'interludio', 'interludio', 'coro', 'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3']
 
-const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
+const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\\([^)]*\\))?(?:\\/[A-G][#b]?)?\\d*$/i
 
 const isChord = (word) => {
-  const clean = word.replace(/[\[\]\(\)]/g, '').trim()
+  const clean = word.replace(/[\\[\\]\\(\\)]/g, '').trim()
   if (!clean) return false
   return CHORD_REGEX.test(clean)
 }
@@ -17,12 +20,12 @@ const isChord = (word) => {
 const isChordLine = (line) => {
   let checkLine = line.trim()
   if (!checkLine) return false
-  checkLine = checkLine.replace(/\|+$/g, '').trim()
-  checkLine = checkLine.replace(/\s*\d+x\s*$/i, '').trim()
+  checkLine = checkLine.replace(/\\|+$/g, '').trim()
+  checkLine = checkLine.replace(/\\s*\\d+x\\s*$/i, '').trim()
   if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
     checkLine = checkLine.slice(1, -1).trim()
   }
-  const parts = checkLine.split(/\s+/).filter(p => p !== '')
+  const parts = checkLine.split(/\\s+/).filter(p => p !== '')
   if (parts.length === 0) return false
   return parts.every(part => isChord(part))
 }
@@ -155,7 +158,7 @@ export default function Player() {
 
   const detectSections = (content) => {
     if (!content) return []
-    const lines = content.split('\n')
+    const lines = content.split('\\n')
     const foundSections = []
     lines.forEach((line, index) => {
       const trimmed = line.trim().toLowerCase()
@@ -217,7 +220,7 @@ export default function Player() {
   const mutedColor = isLightTheme ? 'text-gray-600' : 'text-muted'
 
   const groupContentBySections = () => {
-    const lines = transposedContent.split('\n')
+    const lines = transposedContent.split('\\n')
     const groups = []
     let currentGroup = { type: 'intro', lines: [] }
     lines.forEach((line, i) => {
@@ -239,14 +242,14 @@ export default function Player() {
     if (isChordLine(checkLine)) {
       return <div className="font-mono font-bold" style={{ fontSize: fontSize + 'px', color: '#f97316', lineHeight: 1.3, marginBottom: '2px', whiteSpace: 'pre', fontFamily: 'monospace' }}>{line}</div>
     }
-    const hasInlineChords = /\[[^\]]+\]/.test(line)
+    const hasInlineChords = /\\[[^\\]]+\\]/.test(line)
     if (hasInlineChords) {
-      const parts = line.split(/(\[[^\]]+\])/g).filter(p => p !== '')
+      const parts = line.split(/(\\[[^\\]]+\\])/g).filter(p => p !== '')
       return (
         <div className="font-mono" style={{ fontSize: fontSize + 'px', lineHeight: 1.4, whiteSpace: 'pre', fontFamily: 'monospace', color: isLightTheme ? '#1a1a1a' : undefined }}>
           {parts.map((part, i) => {
             if (part.startsWith('[') && part.endsWith(']')) {
-              return <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>{part.replace(/[\[\]]/g, '')}</span>
+              return <span key={i} style={{ color: '#f97316', fontWeight: 'bold' }}>{part.replace(/[\\[\\]]/g, '')}</span>
             }
             return <span key={i}>{part}</span>
           })}
@@ -398,4 +401,141 @@ export default function Player() {
       </div>
     </>
   )
-}
+}'''
+
+# SetlistCard.jsx CORRIGIDO - USANDO navigate() EM VEZ DE <a href>
+setlist_content = '''import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import AddToSetlistModal from './AddToSetlistModal'
+
+export default function SetlistCard({ setlist, onAdded, onDeleted }) {
+  const navigate = useNavigate()
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useState(() => {
+    setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window)
+  })
+
+  const sortedSongs = [...(setlist.setlist_songs || [])].sort((a, b) => a.position - b.position)
+
+  const handleDelete = async () => {
+    const { error } = await supabase.from('setlists').delete().eq('id', setlist.id)
+    if (error) alert('Erro ao deletar')
+    else onDeleted()
+  }
+
+  const handleRemoveSong = async (setlistSongId) => {
+    const { error } = await supabase.from('setlist_songs').delete().eq('id', setlistSongId)
+    if (error) alert('Erro ao remover')
+    else onAdded()
+  }
+
+  const handleMoveSong = async (index, direction) => {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= sortedSongs.length) return
+    const newOrder = [...sortedSongs]
+    const [movedItem] = newOrder.splice(index, 1)
+    newOrder.splice(newIndex, 0, movedItem)
+    try {
+      for (let i = 0; i < newOrder.length; i++) {
+        const item = newOrder[i]
+        const { error } = await supabase.from('setlist_songs').update({ position: i + 1 }).eq('id', item.id)
+        if (error) { alert('Erro ao reordenar: ' + error.message); return }
+      }
+      onAdded()
+    } catch (err) { alert('Erro: ' + err.message) }
+  }
+
+  const formatDate = (date) => {
+    if (!date) return ''
+    const [year, month, day] = date.split('-')
+    return day + '/' + month + '/' + year
+  }
+
+  return (
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="p-4 border-b border-border flex items-center justify-between gap-3 cursor-pointer hover:bg-surface2/50 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-text text-lg truncate">{setlist.name}</h3>
+          {setlist.description && <p className="text-sm text-muted truncate">{setlist.description}</p>}
+          {setlist.event_date && <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>}
+          <p className="text-xs text-muted mt-1">{sortedSongs.length} musica{sortedSongs.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded) }} className="w-10 h-10 bg-surface2 hover:bg-accent/20 text-text rounded-lg transition-colors flex items-center justify-center">
+            {isExpanded ? '▲' : '▼'}
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); setShowAddModal(true) }} className="px-3 py-2 bg-accent hover:bg-accent/90 text-white text-xs font-semibold rounded-lg transition-colors">
+            + Musica
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(!showConfirmDelete) }} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs rounded-lg transition-colors">
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      {showConfirmDelete && (
+        <div className="px-4 py-3 bg-red-600/10 border-b border-red-600/30 flex items-center justify-between gap-2">
+          <span className="text-sm text-red-400">Deletar este setlist?</span>
+          <div className="flex gap-2">
+            <button onClick={handleDelete} className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg">Sim</button>
+            <button onClick={() => setShowConfirmDelete(false)} className="px-3 py-1 bg-surface2 text-text text-xs rounded-lg">Nao</button>
+          </div>
+        </div>
+      )}
+
+      {isExpanded && (
+        <div className="animate-fadeIn">
+          {sortedSongs.length === 0 ? (
+            <div className="p-6 text-center text-muted text-sm">Nenhuma musica adicionada ainda.</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {sortedSongs.map((item, idx) => {
+                const song = item.songs
+                if (!song) return null
+                return (
+                  <div key={item.id} className="flex items-center gap-2 p-3 hover:bg-surface2 transition-colors">
+                    {isMobile && (
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <button onClick={(e) => { e.stopPropagation(); handleMoveSong(idx, -1) }} disabled={idx === 0} className="w-7 h-7 bg-surface2 hover:bg-accent/20 disabled:opacity-30 text-text rounded flex items-center justify-center text-xs">↑</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleMoveSong(idx, 1) }} disabled={idx === sortedSongs.length - 1} className="w-7 h-7 bg-surface2 hover:bg-accent/20 disabled:opacity-30 text-text rounded flex items-center justify-center text-xs">↓</button>
+                      </div>
+                    )}
+                    <div className="w-8 h-8 bg-accent/10 text-accent font-bold rounded-lg flex items-center justify-center text-sm flex-shrink-0">{idx + 1}</div>
+                    <button onClick={(e) => { e.stopPropagation(); navigate('/player/' + song.id, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
+                      <div className="font-semibold text-text truncate">{song.title}</div>
+                      <div className="text-xs text-muted truncate">{song.artist}</div>
+                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs font-mono bg-accent/10 text-accent px-2 py-0.5 rounded-full">{song.original_key || 'C'}</span>
+                      <span className="text-xs font-mono bg-surface2 text-muted px-2 py-0.5 rounded-full">{song.bpm || 120}</span>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); handleRemoveSong(item.id) }} className="w-7 h-7 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all text-xs flex items-center justify-center">×</button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showAddModal && <AddToSetlistModal setlistId={setlist.id} onClose={() => setShowAddModal(false)} onAdded={onAdded} />}
+    </div>
+  )
+}'''
+
+# Salva os arquivos
+with open('src/pages/Player.jsx', 'w', encoding='utf-8') as f:
+    f.write(player_content)
+
+with open('src/components/SetlistCard.jsx', 'w', encoding='utf-8') as f:
+    f.write(setlist_content)
+
+print('✅ Player.jsx corrigido!')
+print('✅ SetlistCard.jsx corrigido!')
+print('')
+print('Agora rode: npm run build')
