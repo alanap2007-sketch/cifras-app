@@ -182,7 +182,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       {idx + 1}
                     </div>
 
-                    {/* Info - USANDO BUTTON EM VEZ DE LINK */}
+                    {/* Info - USANDO BUTTON EM VEZ DE <a href> */}
                     <button 
                       onClick={(e) => handleSongClick(song.id, e)}
                       className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity"
