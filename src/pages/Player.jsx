@@ -18,9 +18,7 @@ const isChordLine = (line) => {
   if (!checkLine) return false
   checkLine = checkLine.replace(/\|+$/g, '').trim()
   checkLine = checkLine.replace(/\s*\d+x\s*$/i, '').trim()
-  if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
-    checkLine = checkLine.slice(1, -1).trim()
-  }
+  if (checkLine.startsWith('(') && checkLine.endsWith(')')) checkLine = checkLine.slice(1, -1).trim()
   const parts = checkLine.split(/\s+/).filter(p => p !== '')
   if (parts.length === 0) return false
   return parts.every(part => isChord(part))
@@ -36,20 +34,14 @@ export default function Player() {
   const [originalKey, setOriginalKey] = useState('C')
   const [originalCapo, setOriginalCapo] = useState(0)
   const [capo, setCapo] = useState(0)
-  const [fontSize, setFontSize] = useState(() => {
-    const saved = localStorage.getItem('cifrabox_fontSize')
-    return saved ? parseInt(saved) : 18
-  })
+  const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('cifrabox_fontSize') || '18'))
   const [sections, setSections] = useState([])
   const [activeSection, setActiveSection] = useState(null)
   const [showKeyDropdown, setShowKeyDropdown] = useState(false)
   const [showCapoDropdown, setShowCapoDropdown] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [autoScroll, setAutoScroll] = useState(false)
-  const [scrollSpeed, setScrollSpeed] = useState(() => {
-    const saved = localStorage.getItem('cifrabox_scrollSpeed')
-    return saved ? parseInt(saved) : 5
-  })
+  const [scrollSpeed, setScrollSpeed] = useState(() => parseInt(localStorage.getItem('cifrabox_scrollSpeed') || '5'))
   const scrollSpeedRef = useRef(scrollSpeed)
   const animationRef = useRef(null)
   const [beatCount, setBeatCount] = useState(0)
@@ -98,9 +90,7 @@ export default function Player() {
         if (element) {
           const elementTop = element.offsetTop
           const elementBottom = elementTop + element.offsetHeight
-          if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
-            setActiveSection(section.id)
-          }
+          if (scrollPosition >= elementTop && scrollPosition < elementBottom) setActiveSection(section.id)
         }
       })
     }
@@ -157,8 +147,12 @@ export default function Player() {
     const foundSections = []
     lines.forEach((line, index) => {
       const trimmed = line.trim().toLowerCase()
-      const isSection = SECTION_KEYWORDS.some(keyword => trimmed === keyword || trimmed.startsWith(keyword + ':') || trimmed.startsWith(keyword + ' ') || trimmed === '(' + keyword + ')' || trimmed.startsWith('(' + keyword) || trimmed === '[' + keyword + ']' || trimmed.startsWith('[' + keyword))
-      if (isSection) { foundSections.push({ name: line.trim(), lineIndex: index, id: 'section-' + index }) }
+      const isSection = SECTION_KEYWORDS.some(keyword =>
+        trimmed === keyword || trimmed.startsWith(keyword + ':') || trimmed.startsWith(keyword + ' ') ||
+        trimmed === '(' + keyword + ')' || trimmed.startsWith('(' + keyword) ||
+        trimmed === '[' + keyword + ']' || trimmed.startsWith('[' + keyword)
+      )
+      if (isSection) foundSections.push({ name: line.trim(), lineIndex: index, id: 'section-' + index })
     })
     return foundSections
   }
@@ -178,9 +172,8 @@ export default function Player() {
     setAutoScroll(true)
     animationRef.current = setInterval(() => {
       const pixelsPerSecond = 2 + (scrollSpeedRef.current * 1.5)
-      const scrollAmount = pixelsPerSecond / 10
-      window.scrollBy(0, scrollAmount)
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) { stopAutoScroll() }
+      window.scrollBy(0, pixelsPerSecond / 10)
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) stopAutoScroll()
     }, 100)
   }
 
@@ -192,20 +185,17 @@ export default function Player() {
   const scrollToSection = (section) => {
     setActiveSection(section.id)
     const element = document.getElementById(section.id)
-    if (element) { element.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const toggleMenu = () => { setMenuVisible(!menuVisible) }
+  const toggleMenu = () => setMenuVisible(!menuVisible)
 
   const handleBack = () => {
-    if (location.state && location.state.from === 'setlist') {
-      navigate(-1)
-    } else {
-      navigate('/')
-    }
+    if (location.state && location.state.from === 'setlist') navigate(-1)
+    else navigate('/')
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="text-purple-400 text-xl">Carregando...</div></div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-accent text-xl">Carregando...</div></div>
   if (!song) return null
 
   const transposedContent = transposeContent(song.content, semitones)
@@ -224,18 +214,20 @@ export default function Player() {
     lines.forEach((line, i) => {
       const section = sections.find(s => s.lineIndex === i)
       if (section) {
-        if (currentGroup.lines.length > 0) { groups.push(currentGroup) }
+        if (currentGroup.lines.length > 0) groups.push(currentGroup)
         currentGroup = { type: 'section', section: section, lines: [] }
-      } else { currentGroup.lines.push({ text: line, index: i }) }
+      } else {
+        currentGroup.lines.push({ text: line, index: i })
+      }
     })
-    if (currentGroup.lines.length > 0 || currentGroup.section) { groups.push(currentGroup) }
+    if (currentGroup.lines.length > 0 || currentGroup.section) groups.push(currentGroup)
     return groups
   }
 
   const contentGroups = groupContentBySections()
 
   const renderLine = (line) => {
-    if (!line || line.trim() === '') { return <div style={{ height: (fontSize * 0.4) + 'px' }}></div> }
+    if (!line || line.trim() === '') return <div style={{ height: (fontSize * 0.4) + 'px' }}></div>
     let checkLine = line.trim()
     if (isChordLine(checkLine)) {
       return <div className="font-mono font-bold" style={{ fontSize: fontSize + 'px', color: '#f97316', lineHeight: 1.3, marginBottom: '2px', whiteSpace: 'pre', fontFamily: 'monospace' }}>{line}</div>
@@ -340,7 +332,7 @@ export default function Player() {
           <div className="px-2 py-2">
             <div className="max-w-5xl mx-auto">
               <div className="flex gap-1.5 overflow-x-auto justify-start flex-nowrap pb-1" style={{ scrollbarWidth: 'thin' }}>
-                {sections.map((section, idx) => (
+                {sections.map((section) => (
                   <button key={section.id} onClick={() => scrollToSection(section)} className={'px-3 py-1.5 rounded-lg font-semibold text-xs whitespace-nowrap transition-all flex-shrink-0 ' + (activeSection === section.id ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-lg shadow-accent/30 scale-105' : isLightTheme ? 'bg-white text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10' : 'bg-surface2/80 text-accent border border-accent/30 hover:border-accent/60 hover:bg-accent/10')}>
                     {section.name.toUpperCase()}
                   </button>
