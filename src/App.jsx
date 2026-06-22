@@ -5,13 +5,12 @@ import Home from './pages/Home'
 import Editor from './pages/Editor'
 import Player from './pages/Player'
 import Login from './pages/Login'
-import useBackButton from './hooks/useBackButton'
 
 function AppContent() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useBackButton() // Hook para o botão voltar
+   // Hook para o botão voltar
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
