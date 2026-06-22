@@ -28,9 +28,7 @@ export default function Home() {
     const handleOffline = () => setIsOnline(false)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-
     fetchData()
-
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
@@ -45,36 +43,22 @@ export default function Home() {
           .from('songs')
           .select('*')
           .order('created_at', { ascending: false })
-        
         if (songsError) throw songsError
-        
         if (songsData) {
           setSongs(songsData)
           setFilteredSongs(songsData)
           await cacheSongs(songsData)
         }
-
         const { data: setlistsData, error: setlistsError } = await supabase
           .from('setlists')
-          .select(`
-            *,
-            setlist_songs (
-              id,
-              position,
-              songs (id, title, artist, original_key, bpm)
-            )
-          `)
+          .select(`*, setlist_songs (id, position, songs (id, title, artist, original_key, bpm))`)
           .order('created_at', { ascending: false })
-        
         if (setlistsError) throw setlistsError
-        
         if (setlistsData) {
           setSetlists(setlistsData)
           await cacheSetlists(setlistsData)
         }
-
-        const now = new Date()
-        setLastSync(now)
+        setLastSync(new Date())
       } catch (error) {
         console.error('Erro ao buscar dados:', error)
         await loadFromCache()
@@ -82,7 +66,6 @@ export default function Home() {
     } else {
       await loadFromCache()
     }
-
     setLoading(false)
   }
 
@@ -90,26 +73,14 @@ export default function Home() {
     const cachedSongs = await getCachedSongs()
     const cachedSetlists = await getCachedSetlists()
     const lastSyncTime = await getLastSync()
-    if (cachedSongs.length > 0) {
-      setSongs(cachedSongs)
-      setFilteredSongs(cachedSongs)
-    }
-
-    if (cachedSetlists.length > 0) {
-      setSetlists(cachedSetlists)
-    }
-
-    if (lastSyncTime) {
-      setLastSync(lastSyncTime)
-    }
+    if (cachedSongs.length > 0) { setSongs(cachedSongs); setFilteredSongs(cachedSongs) }
+    if (cachedSetlists.length > 0) { setSetlists(cachedSetlists) }
+    if (lastSyncTime) { setLastSync(lastSyncTime) }
   }
 
   const handleSearch = (query) => {
     setSearchQuery(query)
-    if (!query.trim()) {
-      setFilteredSongs(songs)
-      return
-    }
+    if (!query.trim()) { setFilteredSongs(songs); return }
     const filtered = songs.filter(song =>
       song.title.toLowerCase().includes(query.toLowerCase()) ||
       song.artist.toLowerCase().includes(query.toLowerCase())
@@ -125,14 +96,14 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-accent text-xl">Carregando...</div>
+        <div className="text-purple-400 text-xl">Carregando...</div>
       </div>
     )
   }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
-      {/* Header PRETO - Cor do fundo do logo */}
+      {/* Header PRETO - Fundo igual ao do logo */}
       <header className="flex-shrink-0 bg-black border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="px-4 py-4">
           <div className="max-w-5xl mx-auto">
@@ -154,7 +125,7 @@ export default function Home() {
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
-                🎵 Músicas
+                 Músicas
               </button>
               <button
                 onClick={() => setActiveTab('setlists')}
@@ -170,18 +141,16 @@ export default function Home() {
                 to="/editor"
                 className="px-6 py-2.5 rounded-lg font-semibold text-sm bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/30"
               >
-                ️ Nova Cifra
+                ✏️ Nova Cifra
               </Link>
             </div>
 
             {/* Status Online/Offline */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className={`text-xs px-3 py-1 rounded-full ${
-                isOnline 
-                  ? 'bg-green-600/20 text-green-400' 
-                  : 'bg-orange-600/20 text-orange-400'
+                isOnline ? 'bg-green-600/20 text-green-400' : 'bg-orange-600/20 text-orange-400'
               }`}>
-                {isOnline ? '🟢 Online' : '🔴 Offline'}
+                {isOnline ? ' Online' : '🔴 Offline'}
               </span>
               {lastSync && (
                 <span className="text-xs text-gray-400">
@@ -207,7 +176,7 @@ export default function Home() {
             {/* Alerta Offline */}
             {!isOnline && (
               <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2 mt-3">
-                <span>️</span>
+                <span>⚠️</span>
                 <span>Você está offline. Usando dados salvos.</span>
               </div>
             )}
@@ -266,10 +235,7 @@ export default function Home() {
       {showCreateSetlist && (
         <CreateSetlistModal
           onClose={() => setShowCreateSetlist(false)}
-          onCreated={() => {
-            setShowCreateSetlist(false)
-            fetchData()
-          }}
+          onCreated={() => { setShowCreateSetlist(false); fetchData() }}
         />
       )}
     </div>

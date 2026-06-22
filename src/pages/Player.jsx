@@ -284,7 +284,7 @@ export default function Player() {
               </div>
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowCapoDropdown(!showCapoDropdown); setShowKeyDropdown(false); setShowSettings(false) }} className={'flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ' + (capo === 0 ? surface2Color + ' ' + (isLightTheme ? 'text-gray-900' : 'text-accent2') + ' border border-accent2/40' : 'bg-accent2 text-white')}>
-                  <span>🎸</span><span>{capo === 0 ? 'Off' : capo + 'a'}</span><span className="text-[10px]">▼</span>
+                  <span></span><span>{capo === 0 ? 'Off' : capo + 'a'}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showCapoDropdown && (
                   <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-2 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
@@ -304,7 +304,7 @@ export default function Player() {
               <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={'w-8 h-8 ' + (isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text') + ' rounded flex items-center justify-center text-sm font-bold'}>+</button>
             </div>
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>⚙️</button>
               {showSettings && (
                 <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-3 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
                   <div className={'text-xs ' + mutedColor + ' mb-3 font-semibold'}>Configuracoes</div>
@@ -360,7 +360,7 @@ export default function Player() {
       )}
       <div className={'min-h-screen pb-10 ' + bgColor + ' transition-colors duration-300'} style={{ paddingTop: sections.length > 0 ? (menuVisible ? 'calc(env(safe-area-inset-top) + 160px)' : 'calc(env(safe-area-inset-top) + 70px)') : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)') }} onClick={toggleMenu} ref={contentRef}>
         <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4">
-          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span>📡</span><span>Modo offline - Usando dados salvos</span></div>)}
+          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span></span><span>Modo offline - Usando dados salvos</span></div>)}
           <div className={surfaceColor + ' border ' + borderColor + ' rounded-xl p-3 flex items-center justify-between flex-wrap gap-2'}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className={'text-lg md:text-xl font-bold ' + textColor + ' truncate'}>{song.title}</h1>

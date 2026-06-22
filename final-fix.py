@@ -1,6 +1,6 @@
 import os
 
-# Home.jsx - Fundo preto + texto na cor do logo
+# Home.jsx - FUNDO PRETO no header
 home_code = r"""import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -31,9 +31,7 @@ export default function Home() {
     const handleOffline = () => setIsOnline(false)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-
     fetchData()
-
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
@@ -48,36 +46,22 @@ export default function Home() {
           .from('songs')
           .select('*')
           .order('created_at', { ascending: false })
-        
         if (songsError) throw songsError
-        
         if (songsData) {
           setSongs(songsData)
           setFilteredSongs(songsData)
           await cacheSongs(songsData)
         }
-
         const { data: setlistsData, error: setlistsError } = await supabase
           .from('setlists')
-          .select(`
-            *,
-            setlist_songs (
-              id,
-              position,
-              songs (id, title, artist, original_key, bpm)
-            )
-          `)
+          .select(`*, setlist_songs (id, position, songs (id, title, artist, original_key, bpm))`)
           .order('created_at', { ascending: false })
-        
         if (setlistsError) throw setlistsError
-        
         if (setlistsData) {
           setSetlists(setlistsData)
           await cacheSetlists(setlistsData)
         }
-
-        const now = new Date()
-        setLastSync(now)
+        setLastSync(new Date())
       } catch (error) {
         console.error('Erro ao buscar dados:', error)
         await loadFromCache()
@@ -85,7 +69,6 @@ export default function Home() {
     } else {
       await loadFromCache()
     }
-
     setLoading(false)
   }
 
@@ -93,26 +76,14 @@ export default function Home() {
     const cachedSongs = await getCachedSongs()
     const cachedSetlists = await getCachedSetlists()
     const lastSyncTime = await getLastSync()
-    if (cachedSongs.length > 0) {
-      setSongs(cachedSongs)
-      setFilteredSongs(cachedSongs)
-    }
-
-    if (cachedSetlists.length > 0) {
-      setSetlists(cachedSetlists)
-    }
-
-    if (lastSyncTime) {
-      setLastSync(lastSyncTime)
-    }
+    if (cachedSongs.length > 0) { setSongs(cachedSongs); setFilteredSongs(cachedSongs) }
+    if (cachedSetlists.length > 0) { setSetlists(cachedSetlists) }
+    if (lastSyncTime) { setLastSync(lastSyncTime) }
   }
 
   const handleSearch = (query) => {
     setSearchQuery(query)
-    if (!query.trim()) {
-      setFilteredSongs(songs)
-      return
-    }
+    if (!query.trim()) { setFilteredSongs(songs); return }
     const filtered = songs.filter(song =>
       song.title.toLowerCase().includes(query.toLowerCase()) ||
       song.artist.toLowerCase().includes(query.toLowerCase())
@@ -128,14 +99,14 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-accent text-xl">Carregando...</div>
+        <div className="text-purple-400 text-xl">Carregando...</div>
       </div>
     )
   }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
-      {/* Header PRETO - Cor do fundo do logo */}
+      {/* Header PRETO - Fundo igual ao do logo */}
       <header className="flex-shrink-0 bg-black border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="px-4 py-4">
           <div className="max-w-5xl mx-auto">
@@ -157,7 +128,7 @@ export default function Home() {
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
-                🎵 Músicas
+                 Músicas
               </button>
               <button
                 onClick={() => setActiveTab('setlists')}
@@ -173,18 +144,16 @@ export default function Home() {
                 to="/editor"
                 className="px-6 py-2.5 rounded-lg font-semibold text-sm bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/30"
               >
-                ️ Nova Cifra
+                ✏️ Nova Cifra
               </Link>
             </div>
 
             {/* Status Online/Offline */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className={`text-xs px-3 py-1 rounded-full ${
-                isOnline 
-                  ? 'bg-green-600/20 text-green-400' 
-                  : 'bg-orange-600/20 text-orange-400'
+                isOnline ? 'bg-green-600/20 text-green-400' : 'bg-orange-600/20 text-orange-400'
               }`}>
-                {isOnline ? '🟢 Online' : '🔴 Offline'}
+                {isOnline ? ' Online' : '🔴 Offline'}
               </span>
               {lastSync && (
                 <span className="text-xs text-gray-400">
@@ -210,7 +179,7 @@ export default function Home() {
             {/* Alerta Offline */}
             {!isOnline && (
               <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2 mt-3">
-                <span>️</span>
+                <span>⚠️</span>
                 <span>Você está offline. Usando dados salvos.</span>
               </div>
             )}
@@ -269,10 +238,7 @@ export default function Home() {
       {showCreateSetlist && (
         <CreateSetlistModal
           onClose={() => setShowCreateSetlist(false)}
-          onCreated={() => {
-            setShowCreateSetlist(false)
-            fetchData()
-          }}
+          onCreated={() => { setShowCreateSetlist(false); fetchData() }}
         />
       )}
     </div>
@@ -691,7 +657,7 @@ export default function Player() {
               </div>
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowCapoDropdown(!showCapoDropdown); setShowKeyDropdown(false); setShowSettings(false) }} className={'flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ' + (capo === 0 ? surface2Color + ' ' + (isLightTheme ? 'text-gray-900' : 'text-accent2') + ' border border-accent2/40' : 'bg-accent2 text-white')}>
-                  <span>🎸</span><span>{capo === 0 ? 'Off' : capo + 'a'}</span><span className="text-[10px]">▼</span>
+                  <span></span><span>{capo === 0 ? 'Off' : capo + 'a'}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showCapoDropdown && (
                   <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-2 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
@@ -711,7 +677,7 @@ export default function Player() {
               <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={'w-8 h-8 ' + (isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text') + ' rounded flex items-center justify-center text-sm font-bold'}>+</button>
             </div>
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>⚙️</button>
               {showSettings && (
                 <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-3 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
                   <div className={'text-xs ' + mutedColor + ' mb-3 font-semibold'}>Configuracoes</div>
@@ -767,7 +733,7 @@ export default function Player() {
       )}
       <div className={'min-h-screen pb-10 ' + bgColor + ' transition-colors duration-300'} style={{ paddingTop: sections.length > 0 ? (menuVisible ? 'calc(env(safe-area-inset-top) + 160px)' : 'calc(env(safe-area-inset-top) + 70px)') : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)') }} onClick={toggleMenu} ref={contentRef}>
         <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4">
-          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span>📡</span><span>Modo offline - Usando dados salvos</span></div>)}
+          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span></span><span>Modo offline - Usando dados salvos</span></div>)}
           <div className={surfaceColor + ' border ' + borderColor + ' rounded-xl p-3 flex items-center justify-between flex-wrap gap-2'}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className={'text-lg md:text-xl font-bold ' + textColor + ' truncate'}>{song.title}</h1>
@@ -802,19 +768,19 @@ export default function Player() {
 print('Sobrescrevendo arquivos...')
 with open('src/pages/Home.jsx', 'w', encoding='utf-8') as f:
     f.write(home_code)
-print('Home.jsx atualizado!')
+print('✅ Home.jsx atualizado!')
 
 with open('src/components/SetlistCard.jsx', 'w', encoding='utf-8') as f:
     f.write(setlist_code)
-print('SetlistCard.jsx atualizado!')
+print('✅ SetlistCard.jsx atualizado!')
 
 with open('src/pages/Player.jsx', 'w', encoding='utf-8') as f:
     f.write(player_code)
-print('Player.jsx atualizado!')
+print('✅ Player.jsx atualizado!')
 
 print('')
 print('Agora rode:')
 print('  npm run build')
 print('  git add .')
-print('  git commit -m "Redesign header preto + corrige navegacao setlist"')
+print('  git commit -m "Header preto + corrige navegacao setlist"')
 print('  git push')
