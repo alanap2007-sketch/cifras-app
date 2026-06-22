@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { 
-  cacheSongs, 
-  getCachedSongs, 
-  cacheSetlists, 
+import {
+  cacheSongs,
+  getCachedSongs,
+  cacheSetlists,
   getCachedSetlists,
-  getLastSync 
+  getLastSync
 } from '../services/cache'
 import SongRow from '../components/SongRow'
 import SetlistCard from '../components/SetlistCard'
@@ -26,12 +26,11 @@ export default function Home() {
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
-    
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    
+
     fetchData()
-    
+
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
@@ -40,7 +39,6 @@ export default function Home() {
 
   const fetchData = async () => {
     setLoading(true)
-    
     if (navigator.onLine) {
       try {
         const { data: songsData, error: songsError } = await supabase
@@ -92,16 +90,15 @@ export default function Home() {
     const cachedSongs = await getCachedSongs()
     const cachedSetlists = await getCachedSetlists()
     const lastSyncTime = await getLastSync()
-    
     if (cachedSongs.length > 0) {
       setSongs(cachedSongs)
       setFilteredSongs(cachedSongs)
     }
-    
+
     if (cachedSetlists.length > 0) {
       setSetlists(cachedSetlists)
     }
-    
+
     if (lastSyncTime) {
       setLastSync(lastSyncTime)
     }
@@ -127,7 +124,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-accent text-xl">Carregando...</div>
       </div>
     )
@@ -135,30 +132,51 @@ export default function Home() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
-      {/* Header FIXO - Nunca rola */}
-      <header className="flex-shrink-0 bg-surface/95 backdrop-blur-lg border-b border-border shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="px-4 py-3">
-          <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src="/icon.png" alt="CifraBox" className="w-10 h-10 md:w-12 md:h-12" />
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-accent to-accent2 bg-clip-text text-transparent">
+      {/* Header PRETO com Logo Grande */}
+      <header className="flex-shrink-0 bg-black border-b border-border shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="px-4 py-4">
+          <div className="max-w-5xl mx-auto">
+            {/* Logo Grande e Centralizado */}
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <img src="/icon.png" alt="CifraBox" className="w-16 h-16 md:w-20 md:h-20" />
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-accent to-accent2 bg-clip-text text-transparent">
                 CifraBox
               </h1>
             </div>
-            <Link
-              to="/editor"
-              className="bg-accent hover:bg-accent/90 text-white font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2 text-sm flex-shrink-0"
-            >
-              <span>+</span> Nova Cifra
-            </Link>
-          </div>
-        </div>
 
-        {/* Status e busca */}
-        <div className="px-4 pb-3">
-          <div className="max-w-5xl mx-auto space-y-2">
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-1 rounded-full ${
+            {/* Botões de Navegação */}
+            <div className="flex gap-2 justify-center mb-4">
+              <button
+                onClick={() => setActiveTab('songs')}
+                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                  activeTab === 'songs'
+                    ? 'bg-accent text-white shadow-lg shadow-accent/30'
+                    : 'bg-surface2 text-text hover:bg-surface2/80'
+                }`}
+              >
+                 Músicas
+              </button>
+              <button
+                onClick={() => setActiveTab('setlists')}
+                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                  activeTab === 'setlists'
+                    ? 'bg-accent text-white shadow-lg shadow-accent/30'
+                    : 'bg-surface2 text-text hover:bg-surface2/80'
+                }`}
+              >
+                📋 Setlists
+              </button>
+              <Link
+                to="/editor"
+                className="px-6 py-2.5 rounded-lg font-semibold text-sm bg-accent2 text-white hover:bg-accent2/90 transition-all shadow-lg shadow-accent2/30"
+              >
+                ✏️ Nova Cifra
+              </Link>
+            </div>
+
+            {/* Status Online/Offline */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className={`text-xs px-3 py-1 rounded-full ${
                 isOnline 
                   ? 'bg-green-600/20 text-green-400' 
                   : 'bg-orange-600/20 text-orange-400'
@@ -166,60 +184,38 @@ export default function Home() {
                 {isOnline ? '🟢 Online' : '🔴 Offline'}
               </span>
               {lastSync && (
-                <span className="text-xs text-muted">
+                <span className="text-xs text-gray-400">
                   Sync: {formatLastSync(lastSync)}
                 </span>
               )}
             </div>
 
-            {!isOnline && (
-              <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2">
-                <span></span>
-                <span>Você está offline. Usando dados salvos.</span>
-              </div>
-            )}
-
+            {/* Campo de Busca */}
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="🔍 Buscar músicas..."
-                className="w-full bg-surface2 border border-border rounded-xl px-4 py-2.5 pl-10 text-text focus:border-accent outline-none text-sm"
+                className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 pl-12 text-text focus:border-accent outline-none text-sm"
               />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="px-4 border-t border-border">
-          <div className="max-w-5xl mx-auto flex gap-2">
-            <button
-              onClick={() => setActiveTab('songs')}
-              className={`px-4 py-2.5 font-semibold text-sm transition-colors relative ${
-                activeTab === 'songs' ? 'text-accent' : 'text-muted hover:text-text'
-              }`}
-            >
-              🎵 Músicas ({songs.length})
-              {activeTab === 'songs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"></div>}
-            </button>
-            <button
-              onClick={() => setActiveTab('setlists')}
-              className={`px-4 py-2.5 font-semibold text-sm transition-colors relative ${
-                activeTab === 'setlists' ? 'text-accent' : 'text-muted hover:text-text'
-              }`}
-            >
-               Setlists ({setlists.length})
-              {activeTab === 'setlists' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"></div>}
-            </button>
+            {/* Alerta Offline */}
+            {!isOnline && (
+              <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2 mt-3">
+                <span>⚠️</span>
+                <span>Você está offline. Usando dados salvos.</span>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Conteúdo com scroll - Só a lista rola */}
+      {/* Conteúdo com scroll */}
       <main className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="max-w-5xl mx-auto p-4 space-y-4">
           {activeTab === 'songs' ? (
