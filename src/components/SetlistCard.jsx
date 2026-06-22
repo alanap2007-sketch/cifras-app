@@ -56,7 +56,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-text text-lg truncate">{setlist.name}</h3>
           {setlist.description && <p className="text-sm text-muted truncate">{setlist.description}</p>}
-          {setlist.event_date && <p className="text-xs text-accent2 mt-1"> {formatDate(setlist.event_date)}</p>}
+          {setlist.event_date && <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>}
           <p className="text-xs text-muted mt-1">{sortedSongs.length} musica{sortedSongs.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -67,7 +67,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             + Musica
           </button>
           <button onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(!showConfirmDelete) }} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs rounded-lg transition-colors">
-            ️
+            🗑️
           </button>
         </div>
       </div>

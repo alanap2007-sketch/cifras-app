@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { getCachedSongs } from '../services/cache'
 import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
 
-const SECTION_KEYWORDS = ['intro', 'verso', 'refrao', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pre-refrao', 'pre-refrao', 'interludio', 'interludio', 'coro', 'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3']
+const SECTION_KEYWORDS = ['intro', 'verso', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pre-refrao', 'interludio', 'coro', 'primeira parte', 'segunda parte', 'terceira parte']
 
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
@@ -31,7 +31,6 @@ export default function Player() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  
   const [song, setSong] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedKey, setSelectedKey] = useState('C')
@@ -269,7 +268,6 @@ export default function Player() {
                 <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className={'w-10 h-10 hover:bg-accent/20 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' transition-colors text-sm font-bold flex items-center justify-center'}>A+</button>
               </div>
             </div>
-
             <div className="flex items-center gap-1.5">
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowKeyDropdown(!showKeyDropdown); setShowCapoDropdown(false); setShowSettings(false) }} className={'flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ' + (selectedKey === effectiveKey ? 'bg-accent text-white' : surface2Color + ' ' + (isLightTheme ? 'text-gray-900' : 'text-accent') + ' border border-accent/40')}>
@@ -286,7 +284,7 @@ export default function Player() {
               </div>
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowCapoDropdown(!showCapoDropdown); setShowKeyDropdown(false); setShowSettings(false) }} className={'flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ' + (capo === 0 ? surface2Color + ' ' + (isLightTheme ? 'text-gray-900' : 'text-accent2') + ' border border-accent2/40' : 'bg-accent2 text-white')}>
-                  <span></span><span>{capo === 0 ? 'Off' : capo + 'a'}</span><span className="text-[10px]">▼</span>
+                  <span>🎸</span><span>{capo === 0 ? 'Off' : capo + 'a'}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showCapoDropdown && (
                   <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-2 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
@@ -298,7 +296,6 @@ export default function Player() {
                 )}
               </div>
             </div>
-
             <div className={'flex items-center gap-2 ' + surface2Color + ' rounded-lg px-2 py-1.5'}>
               {!autoScroll ? (<button onClick={startAutoScroll} className="flex items-center gap-1 bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"><span>▶</span><span>Auto</span></button>) : (<button onClick={stopAutoScroll} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"><span>⏸</span><span>Parar</span></button>)}
               <div className={'w-px h-6 ' + (isLightTheme ? 'bg-gray-400' : 'bg-border')}></div>
@@ -306,9 +303,8 @@ export default function Player() {
               <span className={'text-xs font-mono ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' w-6 text-center font-bold'}>{scrollSpeed}</span>
               <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={'w-8 h-8 ' + (isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text') + ' rounded flex items-center justify-center text-sm font-bold'}>+</button>
             </div>
-
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>⚙️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>️</button>
               {showSettings && (
                 <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-3 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
                   <div className={'text-xs ' + mutedColor + ' mb-3 font-semibold'}>Configuracoes</div>
@@ -330,7 +326,6 @@ export default function Player() {
                 </div>
               )}
             </div>
-
             <div className="flex gap-1.5">
               <button onClick={handleEdit} className="w-10 h-10 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors text-sm flex items-center justify-center">Edit</button>
               <button onClick={handleDelete} className="w-10 h-10 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 rounded-lg transition-colors text-sm flex items-center justify-center">Del</button>
@@ -338,7 +333,6 @@ export default function Player() {
           </div>
         </div>
       </div>
-
       {sections.length > 0 && (
         <div className={'fixed left-0 right-0 z-40 ' + (isLightTheme ? 'bg-white/98' : 'bg-bg/98') + ' backdrop-blur-lg border-b ' + borderColor + ' shadow-md'} style={{ top: menuVisible ? 'calc(env(safe-area-inset-top) + 80px)' : 'env(safe-area-inset-top)', transition: 'top 0.3s ease' }}>
           <div className="px-2 py-2">
@@ -361,14 +355,12 @@ export default function Player() {
           </div>
         </div>
       )}
-
       {!menuVisible && (
         <button onClick={toggleMenu} className="fixed z-50 w-12 h-12 bg-accent/80 hover:bg-accent text-white rounded-full shadow-lg flex items-center justify-center transition-all" style={{ top: 'calc(env(safe-area-inset-top) + 10px)', right: '10px' }}>☰</button>
       )}
-
       <div className={'min-h-screen pb-10 ' + bgColor + ' transition-colors duration-300'} style={{ paddingTop: sections.length > 0 ? (menuVisible ? 'calc(env(safe-area-inset-top) + 160px)' : 'calc(env(safe-area-inset-top) + 70px)') : (menuVisible ? 'calc(env(safe-area-inset-top) + 90px)' : 'env(safe-area-inset-top)') }} onClick={toggleMenu} ref={contentRef}>
         <div className="max-w-4xl mx-auto px-4 md:px-6 space-y-4">
-          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span></span><span>Modo offline - Usando dados salvos</span></div>)}
+          {!isOnline && (<div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-3 text-orange-400 text-sm flex items-center gap-2"><span>📡</span><span>Modo offline - Usando dados salvos</span></div>)}
           <div className={surfaceColor + ' border ' + borderColor + ' rounded-xl p-3 flex items-center justify-between flex-wrap gap-2'}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className={'text-lg md:text-xl font-bold ' + textColor + ' truncate'}>{song.title}</h1>
