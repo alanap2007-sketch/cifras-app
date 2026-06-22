@@ -1,6 +1,6 @@
 import os
 
-# Home.jsx - Com fundo da imagem e logo atualizado
+# Home.jsx - Fundo preto APENAS no header
 home_code = r"""import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -31,9 +31,7 @@ export default function Home() {
     const handleOffline = () => setIsOnline(false)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-
     fetchData()
-
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
@@ -48,44 +46,29 @@ export default function Home() {
           .from('songs')
           .select('*')
           .order('created_at', { ascending: false })
-        
         if (songsError) throw songsError
-        
         if (songsData) {
           setSongs(songsData)
           setFilteredSongs(songsData)
           await cacheSongs(songsData)
         }
-
         const { data: setlistsData, error: setlistsError } = await supabase
           .from('setlists')
-          .select(`
-            *,
-            setlist_songs (
-              id,
-              position,
-              songs (id, title, artist, original_key, bpm)
-            )
-          `)
+          .select(`*, setlist_songs (id, position, songs (id, title, artist, original_key, bpm))`)
           .order('created_at', { ascending: false })
-        
         if (setlistsError) throw setlistsError
-        
         if (setlistsData) {
           setSetlists(setlistsData)
           await cacheSetlists(setlistsData)
         }
-
-        const now = new Date()
-        setLastSync(now)
+        setLastSync(new Date())
       } catch (error) {
-        console.error('Erro ao buscar dados:', error)
+        console.error('Erro:', error)
         await loadFromCache()
       }
     } else {
       await loadFromCache()
     }
-
     setLoading(false)
   }
 
@@ -93,26 +76,14 @@ export default function Home() {
     const cachedSongs = await getCachedSongs()
     const cachedSetlists = await getCachedSetlists()
     const lastSyncTime = await getLastSync()
-    if (cachedSongs.length > 0) {
-      setSongs(cachedSongs)
-      setFilteredSongs(cachedSongs)
-    }
-
-    if (cachedSetlists.length > 0) {
-      setSetlists(cachedSetlists)
-    }
-
-    if (lastSyncTime) {
-      setLastSync(lastSyncTime)
-    }
+    if (cachedSongs.length > 0) { setSongs(cachedSongs); setFilteredSongs(cachedSongs) }
+    if (cachedSetlists.length > 0) { setSetlists(cachedSetlists) }
+    if (lastSyncTime) { setLastSync(lastSyncTime) }
   }
 
   const handleSearch = (query) => {
     setSearchQuery(query)
-    if (!query.trim()) {
-      setFilteredSongs(songs)
-      return
-    }
+    if (!query.trim()) { setFilteredSongs(songs); return }
     const filtered = songs.filter(song =>
       song.title.toLowerCase().includes(query.toLowerCase()) ||
       song.artist.toLowerCase().includes(query.toLowerCase())
@@ -127,30 +98,22 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: 'url(/fundo.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="text-purple-400 text-xl">Carregando...</div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ 
-      backgroundImage: 'url(/fundo.jpg)', 
-      backgroundSize: 'cover', 
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-      overflow: 'hidden' 
-    }}>
-      {/* Header PRETO com transparência */}
-      <header className="flex-shrink-0 bg-black/80 backdrop-blur-lg border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
+      {/* Header PRETO - Apenas esta parte tem fundo preto */}
+      <header className="flex-shrink-0 bg-black border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="px-4 py-4">
           <div className="max-w-5xl mx-auto">
-            {/* Logo Grande e Centralizado */}
+            {/* Logo e Título */}
             <div className="flex items-center justify-center gap-4 mb-4">
-              <img src="/icon2.png" alt="CifraBox" className="w-20 h-20 md:w-24 md:h-24" />
-              <h1 className="text-3xl md:text-4xl font-bold text-purple-400">
-                CifraBox
-              </h1>
+              <img src="/icon2.png" alt="CifraBox" className="w-16 h-16 md:w-20 md:h-20" />
+              <h1 className="text-3xl md:text-4xl font-bold text-purple-400">CifraBox</h1>
             </div>
 
             {/* Botões de Navegação */}
@@ -183,7 +146,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Status Online/Offline */}
+            {/* Status */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className={`text-xs px-3 py-1 rounded-full ${
                 isOnline ? 'bg-green-600/20 text-green-400' : 'bg-orange-600/20 text-orange-400'
@@ -191,9 +154,7 @@ export default function Home() {
                 {isOnline ? '🟢 Online' : '🔴 Offline'}
               </span>
               {lastSync && (
-                <span className="text-xs text-gray-400">
-                  Sync: {formatLastSync(lastSync)}
-                </span>
+                <span className="text-xs text-gray-400">Sync: {formatLastSync(lastSync)}</span>
               )}
             </div>
 
@@ -211,7 +172,6 @@ export default function Home() {
               </svg>
             </div>
 
-            {/* Alerta Offline */}
             {!isOnline && (
               <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2 mt-3">
                 <span>⚠️</span>
@@ -222,7 +182,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Conteúdo com scroll */}
+      {/* Conteúdo com scroll - Fundo normal */}
       <main className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="max-w-5xl mx-auto p-4 space-y-4">
           {activeTab === 'songs' ? (
@@ -235,9 +195,7 @@ export default function Home() {
                   </Link>
                 </div>
               ) : (
-                filteredSongs.map(song => (
-                  <SongRow key={song.id} song={song} />
-                ))
+                filteredSongs.map(song => (<SongRow key={song.id} song={song} />))
               )}
             </div>
           ) : (
@@ -249,7 +207,6 @@ export default function Home() {
                 <span className="text-xl">+</span>
                 <span>Criar novo Setlist</span>
               </button>
-
               {setlists.length === 0 ? (
                 <div className="text-center py-16">
                   <p className="text-gray-400 text-lg">Nenhum setlist criado ainda</p>
@@ -257,12 +214,7 @@ export default function Home() {
                 </div>
               ) : (
                 setlists.map(setlist => (
-                  <SetlistCard
-                    key={setlist.id}
-                    setlist={setlist}
-                    onAdded={fetchData}
-                    onDeleted={fetchData}
-                  />
+                  <SetlistCard key={setlist.id} setlist={setlist} onAdded={fetchData} onDeleted={fetchData} />
                 ))
               )}
             </div>
@@ -280,7 +232,7 @@ export default function Home() {
   )
 }"""
 
-# SetlistCard.jsx - CORREÇÃO DA NAVEGAÇÃO
+# SetlistCard.jsx - USANDO navigate() corretamente
 setlist_code = r"""import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -333,6 +285,10 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
     return day + '/' + month + '/' + year
   }
 
+  const handleSongClick = (songId) => {
+    navigate('/player/' + songId, { state: { from: 'setlist' } })
+  }
+
   return (
     <div className="bg-surface border border-border rounded-xl overflow-hidden">
       <div className="p-4 border-b border-border flex items-center justify-between gap-3 cursor-pointer hover:bg-surface2/50 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
@@ -383,7 +339,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       </div>
                     )}
                     <div className="w-8 h-8 bg-accent/10 text-accent font-bold rounded-lg flex items-center justify-center text-sm flex-shrink-0">{idx + 1}</div>
-                    <button onClick={(e) => { e.stopPropagation(); navigate('/player/' + song.id, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); handleSongClick(song.id) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="font-semibold text-text truncate">{song.title}</div>
                       <div className="text-xs text-muted truncate">{song.artist}</div>
                     </button>
@@ -405,7 +361,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
   )
 }"""
 
-# Player.jsx - CORREÇÃO DO BOTÃO VOLTAR
+# Player.jsx - Botão voltar inteligente
 player_code = r"""import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -413,7 +369,6 @@ import { getCachedSongs } from '../services/cache'
 import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
 
 const SECTION_KEYWORDS = ['intro', 'verso', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pre-refrao', 'interludio', 'coro', 'primeira parte', 'segunda parte', 'terceira parte']
-
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
 const isChord = (word) => {
@@ -580,7 +535,6 @@ export default function Player() {
   }
 
   const handleEdit = () => navigate('/editor/' + id)
-
   const effectiveKey = getNoteFromSemitones(originalKey, capo)
   const semitones = getSemitonesDifference(effectiveKey, selectedKey)
 
@@ -608,10 +562,14 @@ export default function Player() {
   const toggleMenu = () => { setMenuVisible(!menuVisible) }
 
   const handleBack = () => {
-    if (location.state && location.state.from === 'setlist') { navigate(-1) } else { navigate('/') }
+    if (location.state && location.state.from === 'setlist') {
+      navigate(-1)
+    } else {
+      navigate('/')
+    }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: 'url(/fundo.jpg)', backgroundSize: 'cover' }}><div className="text-purple-400 text-xl">Carregando...</div></div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="text-purple-400 text-xl">Carregando...</div></div>
   if (!song) return null
 
   const transposedContent = transposeContent(song.content, semitones)
@@ -712,7 +670,7 @@ export default function Player() {
               <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={'w-8 h-8 ' + (isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text') + ' rounded flex items-center justify-center text-sm font-bold'}>+</button>
             </div>
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>⚙️</button>
               {showSettings && (
                 <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-3 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
                   <div className={'text-xs ' + mutedColor + ' mb-3 font-semibold'}>Configuracoes</div>
@@ -800,7 +758,7 @@ export default function Player() {
   )
 }"""
 
-print('Sobrescrevendo arquivos...')
+print('🔧 Sobrescrevendo arquivos...')
 with open('src/pages/Home.jsx', 'w', encoding='utf-8') as f:
     f.write(home_code)
 print('✅ Home.jsx atualizado!')
@@ -814,12 +772,12 @@ with open('src/pages/Player.jsx', 'w', encoding='utf-8') as f:
 print('✅ Player.jsx atualizado!')
 
 print('')
-print('📋 AGORA COLOQUE AS IMAGENS:')
-print('   1. Copie fundo.jpg para a pasta public/')
-print('   2. Copie icon2.png para a pasta public/')
+print('📋 AGORA:')
+print('1. Copie icon2.png para a pasta public/')
+print('2. Copie fundo.jpg para a pasta public/')
 print('')
 print('🔄 Depois rode:')
 print('   npm run build')
 print('   git add .')
-print('   git commit -m "Fundo personalizado + corrige navegacao setlist"')
+print('   git commit -m "Header preto + corrige navegacao setlist"')
 print('   git push')

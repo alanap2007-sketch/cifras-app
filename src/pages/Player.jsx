@@ -5,7 +5,6 @@ import { getCachedSongs } from '../services/cache'
 import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
 
 const SECTION_KEYWORDS = ['intro', 'verso', 'refrao', 'ponte', 'bridge', 'final', 'outro', 'pre-refrao', 'interludio', 'coro', 'primeira parte', 'segunda parte', 'terceira parte']
-
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
 const isChord = (word) => {
@@ -172,7 +171,6 @@ export default function Player() {
   }
 
   const handleEdit = () => navigate('/editor/' + id)
-
   const effectiveKey = getNoteFromSemitones(originalKey, capo)
   const semitones = getSemitonesDifference(effectiveKey, selectedKey)
 
@@ -200,10 +198,14 @@ export default function Player() {
   const toggleMenu = () => { setMenuVisible(!menuVisible) }
 
   const handleBack = () => {
-    if (location.state && location.state.from === 'setlist') { navigate(-1) } else { navigate('/') }
+    if (location.state && location.state.from === 'setlist') {
+      navigate(-1)
+    } else {
+      navigate('/')
+    }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: 'url(/fundo.jpg)', backgroundSize: 'cover' }}><div className="text-purple-400 text-xl">Carregando...</div></div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="text-purple-400 text-xl">Carregando...</div></div>
   if (!song) return null
 
   const transposedContent = transposeContent(song.content, semitones)
@@ -304,7 +306,7 @@ export default function Player() {
               <button onClick={() => setScrollSpeed(s => Math.min(50, s + 1))} className={'w-8 h-8 ' + (isLightTheme ? 'bg-gray-300 hover:bg-gray-400 text-gray-900' : 'bg-surface hover:bg-accent/20 text-text') + ' rounded flex items-center justify-center text-sm font-bold'}>+</button>
             </div>
             <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>️</button>
+              <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); setShowKeyDropdown(false); setShowCapoDropdown(false) }} className={'w-10 h-10 ' + surface2Color + ' hover:opacity-80 ' + (isLightTheme ? 'text-gray-900' : 'text-text') + ' border ' + borderColor + ' rounded-lg transition-colors text-base flex items-center justify-center'}>⚙️</button>
               {showSettings && (
                 <div className={'absolute top-full right-0 mt-2 ' + surfaceColor + ' border ' + borderColor + ' rounded-xl shadow-2xl z-50 p-3 min-w-[200px]'} onClick={(e) => e.stopPropagation()}>
                   <div className={'text-xs ' + mutedColor + ' mb-3 font-semibold'}>Configuracoes</div>

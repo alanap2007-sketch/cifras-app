@@ -28,9 +28,7 @@ export default function Home() {
     const handleOffline = () => setIsOnline(false)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-
     fetchData()
-
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
@@ -45,44 +43,29 @@ export default function Home() {
           .from('songs')
           .select('*')
           .order('created_at', { ascending: false })
-        
         if (songsError) throw songsError
-        
         if (songsData) {
           setSongs(songsData)
           setFilteredSongs(songsData)
           await cacheSongs(songsData)
         }
-
         const { data: setlistsData, error: setlistsError } = await supabase
           .from('setlists')
-          .select(`
-            *,
-            setlist_songs (
-              id,
-              position,
-              songs (id, title, artist, original_key, bpm)
-            )
-          `)
+          .select(`*, setlist_songs (id, position, songs (id, title, artist, original_key, bpm))`)
           .order('created_at', { ascending: false })
-        
         if (setlistsError) throw setlistsError
-        
         if (setlistsData) {
           setSetlists(setlistsData)
           await cacheSetlists(setlistsData)
         }
-
-        const now = new Date()
-        setLastSync(now)
+        setLastSync(new Date())
       } catch (error) {
-        console.error('Erro ao buscar dados:', error)
+        console.error('Erro:', error)
         await loadFromCache()
       }
     } else {
       await loadFromCache()
     }
-
     setLoading(false)
   }
 
@@ -90,26 +73,14 @@ export default function Home() {
     const cachedSongs = await getCachedSongs()
     const cachedSetlists = await getCachedSetlists()
     const lastSyncTime = await getLastSync()
-    if (cachedSongs.length > 0) {
-      setSongs(cachedSongs)
-      setFilteredSongs(cachedSongs)
-    }
-
-    if (cachedSetlists.length > 0) {
-      setSetlists(cachedSetlists)
-    }
-
-    if (lastSyncTime) {
-      setLastSync(lastSyncTime)
-    }
+    if (cachedSongs.length > 0) { setSongs(cachedSongs); setFilteredSongs(cachedSongs) }
+    if (cachedSetlists.length > 0) { setSetlists(cachedSetlists) }
+    if (lastSyncTime) { setLastSync(lastSyncTime) }
   }
 
   const handleSearch = (query) => {
     setSearchQuery(query)
-    if (!query.trim()) {
-      setFilteredSongs(songs)
-      return
-    }
+    if (!query.trim()) { setFilteredSongs(songs); return }
     const filtered = songs.filter(song =>
       song.title.toLowerCase().includes(query.toLowerCase()) ||
       song.artist.toLowerCase().includes(query.toLowerCase())
@@ -124,30 +95,22 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: 'url(/fundo.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="text-purple-400 text-xl">Carregando...</div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ 
-      backgroundImage: 'url(/fundo.jpg)', 
-      backgroundSize: 'cover', 
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-      overflow: 'hidden' 
-    }}>
-      {/* Header PRETO com transparência */}
-      <header className="flex-shrink-0 bg-black/80 backdrop-blur-lg border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
+      {/* Header PRETO - Apenas esta parte tem fundo preto */}
+      <header className="flex-shrink-0 bg-black border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="px-4 py-4">
           <div className="max-w-5xl mx-auto">
-            {/* Logo Grande e Centralizado */}
+            {/* Logo e Título */}
             <div className="flex items-center justify-center gap-4 mb-4">
-              <img src="/icon2.png" alt="CifraBox" className="w-20 h-20 md:w-24 md:h-24" />
-              <h1 className="text-3xl md:text-4xl font-bold text-purple-400">
-                CifraBox
-              </h1>
+              <img src="/icon2.png" alt="CifraBox" className="w-16 h-16 md:w-20 md:h-20" />
+              <h1 className="text-3xl md:text-4xl font-bold text-purple-400">CifraBox</h1>
             </div>
 
             {/* Botões de Navegação */}
@@ -180,7 +143,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Status Online/Offline */}
+            {/* Status */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className={`text-xs px-3 py-1 rounded-full ${
                 isOnline ? 'bg-green-600/20 text-green-400' : 'bg-orange-600/20 text-orange-400'
@@ -188,9 +151,7 @@ export default function Home() {
                 {isOnline ? '🟢 Online' : '🔴 Offline'}
               </span>
               {lastSync && (
-                <span className="text-xs text-gray-400">
-                  Sync: {formatLastSync(lastSync)}
-                </span>
+                <span className="text-xs text-gray-400">Sync: {formatLastSync(lastSync)}</span>
               )}
             </div>
 
@@ -208,7 +169,6 @@ export default function Home() {
               </svg>
             </div>
 
-            {/* Alerta Offline */}
             {!isOnline && (
               <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2 mt-3">
                 <span>⚠️</span>
@@ -219,7 +179,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Conteúdo com scroll */}
+      {/* Conteúdo com scroll - Fundo normal */}
       <main className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="max-w-5xl mx-auto p-4 space-y-4">
           {activeTab === 'songs' ? (
@@ -232,9 +192,7 @@ export default function Home() {
                   </Link>
                 </div>
               ) : (
-                filteredSongs.map(song => (
-                  <SongRow key={song.id} song={song} />
-                ))
+                filteredSongs.map(song => (<SongRow key={song.id} song={song} />))
               )}
             </div>
           ) : (
@@ -246,7 +204,6 @@ export default function Home() {
                 <span className="text-xl">+</span>
                 <span>Criar novo Setlist</span>
               </button>
-
               {setlists.length === 0 ? (
                 <div className="text-center py-16">
                   <p className="text-gray-400 text-lg">Nenhum setlist criado ainda</p>
@@ -254,12 +211,7 @@ export default function Home() {
                 </div>
               ) : (
                 setlists.map(setlist => (
-                  <SetlistCard
-                    key={setlist.id}
-                    setlist={setlist}
-                    onAdded={fetchData}
-                    onDeleted={fetchData}
-                  />
+                  <SetlistCard key={setlist.id} setlist={setlist} onAdded={fetchData} onDeleted={fetchData} />
                 ))
               )}
             </div>

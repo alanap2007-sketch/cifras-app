@@ -50,6 +50,10 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
     return day + '/' + month + '/' + year
   }
 
+  const handleSongClick = (songId) => {
+    navigate('/player/' + songId, { state: { from: 'setlist' } })
+  }
+
   return (
     <div className="bg-surface border border-border rounded-xl overflow-hidden">
       <div className="p-4 border-b border-border flex items-center justify-between gap-3 cursor-pointer hover:bg-surface2/50 transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
@@ -100,7 +104,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       </div>
                     )}
                     <div className="w-8 h-8 bg-accent/10 text-accent font-bold rounded-lg flex items-center justify-center text-sm flex-shrink-0">{idx + 1}</div>
-                    <button onClick={(e) => { e.stopPropagation(); navigate('/player/' + song.id, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); handleSongClick(song.id) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="font-semibold text-text truncate">{song.title}</div>
                       <div className="text-xs text-muted truncate">{song.artist}</div>
                     </button>
