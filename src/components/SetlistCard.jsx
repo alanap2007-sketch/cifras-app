@@ -80,7 +80,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             <p className="text-sm text-muted truncate">{setlist.description}</p>
           )}
           {setlist.event_date && (
-            <p className="text-xs text-accent2 mt-1"> {formatDate(setlist.event_date)}</p>
+            <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>
           )}
           <p className="text-xs text-muted mt-1">
             {sortedSongs.length} música{sortedSongs.length !== 1 ? 's' : ''}

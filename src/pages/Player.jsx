@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getCachedSongs } from '../services/cache'
 import { transposeContent, getSemitonesDifference, getAllKeys, getNoteFromSemitones } from '../utils/transposer'
@@ -10,7 +10,6 @@ const SECTION_KEYWORDS = [
   'primeira parte', 'segunda parte', 'terceira parte', 'parte 1', 'parte 2', 'parte 3'
 ]
 
-// Regex CORRIGIDA para acordes
 const CHORD_REGEX = /^[A-G][#b]?(?:maj7|m7|dim7|aug7|maj|min|dim|aug|sus[24]?|add[2469]|m|7)?(?:\([^)]*\))?(?:\/[A-G][#b]?)?\d*$/i
 
 const isChord = (word) => {
@@ -23,9 +22,7 @@ const isChordLine = (line) => {
   let checkLine = line.trim()
   if (!checkLine) return false
   
-  // Remove barras verticais | no final
   checkLine = checkLine.replace(/\|+$/g, '').trim()
-  // Remove "2x", "3x" no final
   checkLine = checkLine.replace(/\s*\d+x\s*$/i, '').trim()
   
   if (checkLine.startsWith('(') && checkLine.endsWith(')')) {
@@ -50,7 +47,6 @@ export default function Player() {
   const [originalCapo, setOriginalCapo] = useState(0)
   const [capo, setCapo] = useState(0)
   
-  // Carrega configurações salvas ou usa padrão
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('cifrabox_fontSize')
     return saved ? parseInt(saved) : 18
@@ -80,7 +76,6 @@ export default function Player() {
 
   const contentRef = useRef(null)
 
-  // Salva configurações quando mudam
   useEffect(() => {
     localStorage.setItem('cifrabox_fontSize', fontSize)
   }, [fontSize])
@@ -136,7 +131,6 @@ export default function Player() {
     return () => stopAutoScroll()
   }, [id])
 
-  // Detecta seção ativa durante scroll
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 250
@@ -274,13 +268,12 @@ export default function Player() {
   }
 
   const handleBack = () => {
-  // Se veio do setlist, volta para o setlist
-  if (location.state?.from === 'setlist') {
-    navigate(-1)
-  } else {
-    navigate('/')
+    if (location.state?.from === 'setlist') {
+      navigate(-1)
+    } else {
+      navigate('/')
+    }
   }
-}
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-accent text-xl">Carregando...</div></div>
   if (!song) return null
@@ -391,7 +384,6 @@ export default function Player() {
 
   return (
     <>
-      {/* BARRA 1 - Controles */}
       <div 
         className={`fixed top-0 left-0 right-0 z-50 ${isLightTheme ? 'bg-white/95' : 'bg-surface/95'} backdrop-blur-lg border-b ${borderColor} shadow-lg transition-all duration-300 ${
           menuVisible ? 'translate-y-0' : '-translate-y-full'
@@ -403,11 +395,11 @@ export default function Player() {
             
             <div className="flex items-center gap-2">
               <button 
-  onClick={handleBack}
-  className={`w-9 h-9 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-sm flex items-center justify-center flex-shrink-0`}
->
-  ←
-</button>
+                onClick={handleBack}
+                className={`w-10 h-10 ${surface2Color} hover:opacity-80 ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor} rounded-lg transition-colors text-base flex items-center justify-center flex-shrink-0`}
+              >
+                ←
+              </button>
               <div className={`flex items-center ${surface2Color} rounded-lg border ${borderColor} overflow-hidden`}>
                 <button onClick={() => setFontSize(s => Math.max(12, s - 2))} className={`w-10 h-10 hover:bg-accent/20 ${isLightTheme ? 'text-gray-900' : 'text-text'} transition-colors text-sm font-bold flex items-center justify-center`}>A-</button>
                 <div className={`w-px h-5 ${isLightTheme ? 'bg-gray-400' : 'bg-border'}`}></div>
@@ -421,7 +413,7 @@ export default function Player() {
                   onClick={(e) => { e.stopPropagation(); setShowKeyDropdown(!showKeyDropdown); setShowCapoDropdown(false); setShowSettings(false) }}
                   className={`flex items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs transition-colors ${selectedKey === effectiveKey ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-accent'} border border-accent/40`}`}
                 >
-                  <span>🎼</span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
+                  <span></span><span>{selectedKey}</span><span className="text-[10px]">▼</span>
                 </button>
                 {showKeyDropdown && (
                   <div className={`absolute top-full left-0 mt-2 ${surfaceColor} border ${borderColor} rounded-xl shadow-2xl z-50 p-2 min-w-[240px]`} onClick={(e) => e.stopPropagation()}>
@@ -457,17 +449,11 @@ export default function Player() {
 
             <div className={`flex items-center gap-2 ${surface2Color} rounded-lg px-2 py-1.5`}>
               {!autoScroll ? (
-                <button
-                  onClick={startAutoScroll}
-                  className="flex items-center gap-1 bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
-                >
+                <button onClick={startAutoScroll} className="flex items-center gap-1 bg-accent hover:bg-accent/90 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors">
                   <span>▶</span><span>Auto</span>
                 </button>
               ) : (
-                <button
-                  onClick={stopAutoScroll}
-                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
-                >
+                <button onClick={stopAutoScroll} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors">
                   <span>⏸</span><span>Parar</span>
                 </button>
               )}
@@ -487,7 +473,7 @@ export default function Player() {
                       <label className={`text-xs ${mutedColor} block mb-1`}>Tema</label>
                       <div className="flex gap-2">
                         <button onClick={() => setTheme('dark')} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${theme === 'dark' ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`}`}>🌙 Escuro</button>
-                        <button onClick={() => setTheme('light')} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${theme === 'light' ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`}`}>☀️ Claro</button>
+                        <button onClick={() => setTheme('light')} className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${theme === 'light' ? 'bg-accent text-white' : `${surface2Color} ${isLightTheme ? 'text-gray-900' : 'text-text'} border ${borderColor}`}`}>️ Claro</button>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -509,7 +495,6 @@ export default function Player() {
         </div>
       </div>
 
-      {/* BARRA 2 - Seções (SEMPRE FIXA) - CORRIGIDA */}
       {sections.length > 0 && (
         <div 
           className={`fixed left-0 right-0 z-40 ${isLightTheme ? 'bg-white/98' : 'bg-bg/98'} backdrop-blur-lg border-b ${borderColor} shadow-md`}
@@ -520,7 +505,6 @@ export default function Player() {
         >
           <div className="px-2 py-2">
             <div className="max-w-5xl mx-auto">
-              {/* Scroll horizontal para muitas seções */}
               <div className="flex gap-1.5 overflow-x-auto justify-start flex-nowrap pb-1" style={{ scrollbarWidth: 'thin' }}>
                 {sections.map((section, idx) => (
                   <button
@@ -538,7 +522,6 @@ export default function Player() {
                   </button>
                 ))}
                 
-                {/* BPM na barra 2 */}
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${surface2Color} border ${borderColor} ml-2 flex-shrink-0`}>
                   <div className="flex gap-1">
                     {[0, 1, 2, 3].map(beat => (
@@ -561,7 +544,6 @@ export default function Player() {
         </div>
       )}
 
-      {/* Botão flutuante */}
       {!menuVisible && (
         <button
           onClick={toggleMenu}
