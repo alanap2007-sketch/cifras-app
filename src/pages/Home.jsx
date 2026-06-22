@@ -132,14 +132,14 @@ export default function Home() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-bg" style={{ overflow: 'hidden' }}>
-      {/* Header PRETO com Logo Grande */}
-      <header className="flex-shrink-0 bg-black border-b border-border shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* Header PRETO - Cor do fundo do logo */}
+      <header className="flex-shrink-0 bg-black border-b border-gray-800 shadow-lg z-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="px-4 py-4">
           <div className="max-w-5xl mx-auto">
             {/* Logo Grande e Centralizado */}
             <div className="flex items-center justify-center gap-4 mb-4">
               <img src="/icon.png" alt="CifraBox" className="w-16 h-16 md:w-20 md:h-20" />
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-accent to-accent2 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-4xl font-bold text-purple-400">
                 CifraBox
               </h1>
             </div>
@@ -150,27 +150,27 @@ export default function Home() {
                 onClick={() => setActiveTab('songs')}
                 className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   activeTab === 'songs'
-                    ? 'bg-accent text-white shadow-lg shadow-accent/30'
-                    : 'bg-surface2 text-text hover:bg-surface2/80'
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
-                 Músicas
+                🎵 Músicas
               </button>
               <button
                 onClick={() => setActiveTab('setlists')}
                 className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   activeTab === 'setlists'
-                    ? 'bg-accent text-white shadow-lg shadow-accent/30'
-                    : 'bg-surface2 text-text hover:bg-surface2/80'
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
                 📋 Setlists
               </button>
               <Link
                 to="/editor"
-                className="px-6 py-2.5 rounded-lg font-semibold text-sm bg-accent2 text-white hover:bg-accent2/90 transition-all shadow-lg shadow-accent2/30"
+                className="px-6 py-2.5 rounded-lg font-semibold text-sm bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/30"
               >
-                ✏️ Nova Cifra
+                ️ Nova Cifra
               </Link>
             </div>
 
@@ -197,9 +197,9 @@ export default function Home() {
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="🔍 Buscar músicas..."
-                className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 pl-12 text-text focus:border-accent outline-none text-sm"
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 pl-12 text-white focus:border-purple-500 outline-none text-sm"
               />
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -207,7 +207,7 @@ export default function Home() {
             {/* Alerta Offline */}
             {!isOnline && (
               <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-2 text-orange-400 text-xs flex items-center gap-2 mt-3">
-                <span>⚠️</span>
+                <span>️</span>
                 <span>Você está offline. Usando dados salvos.</span>
               </div>
             )}
@@ -222,8 +222,8 @@ export default function Home() {
             <div className="space-y-2">
               {filteredSongs.length === 0 ? (
                 <div className="text-center py-16">
-                  <p className="text-muted text-lg mb-4">Nenhuma música encontrada</p>
-                  <Link to="/editor" className="inline-block text-accent hover:underline">
+                  <p className="text-gray-400 text-lg mb-4">Nenhuma música encontrada</p>
+                  <Link to="/editor" className="inline-block text-purple-400 hover:underline">
                     Criar primeira cifra →
                   </Link>
                 </div>
@@ -237,7 +237,7 @@ export default function Home() {
             <div className="space-y-4">
               <button
                 onClick={() => setShowCreateSetlist(true)}
-                className="w-full bg-gradient-to-r from-accent/10 to-accent2/10 border-2 border-dashed border-accent/40 hover:border-accent/70 rounded-xl p-4 text-accent font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-purple-600/10 to-orange-500/10 border-2 border-dashed border-purple-500/40 hover:border-purple-500/70 rounded-xl p-4 text-purple-400 font-semibold transition-colors flex items-center justify-center gap-2"
               >
                 <span className="text-xl">+</span>
                 <span>Criar novo Setlist</span>
@@ -245,8 +245,8 @@ export default function Home() {
 
               {setlists.length === 0 ? (
                 <div className="text-center py-16">
-                  <p className="text-muted text-lg">Nenhum setlist criado ainda</p>
-                  <p className="text-sm text-muted mt-2">Crie um setlist para organizar os louvores do culto</p>
+                  <p className="text-gray-400 text-lg">Nenhum setlist criado ainda</p>
+                  <p className="text-sm text-gray-500 mt-2">Crie um setlist para organizar os louvores do culto</p>
                 </div>
               ) : (
                 setlists.map(setlist => (
