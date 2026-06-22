@@ -201,16 +201,8 @@ export default function Player() {
   const toggleMenu = () => { setMenuVisible(!menuVisible) }
 
   const handleBack = () => {
-  const fromState = location.state?.from
-  const fromStorage = sessionStorage.getItem('cifrabox_fromSetlist')
-  
-  if (fromState === 'setlist' || fromStorage === 'true') {
-    sessionStorage.removeItem('cifrabox_fromSetlist')
-    navigate('/setlists')  // <-- Troque aqui pela rota REAL do seu setlist
-  } else {
-    navigate('/')
+    if (location.state && location.state.from === 'setlist') { navigate(-1) } else { navigate('/') }
   }
-}
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-accent text-xl">Carregando...</div></div>
   if (!song) return null

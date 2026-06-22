@@ -56,7 +56,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-text text-lg truncate">{setlist.name}</h3>
           {setlist.description && <p className="text-sm text-muted truncate">{setlist.description}</p>}
-          {setlist.event_date && <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>}
+          {setlist.event_date && <p className="text-xs text-accent2 mt-1"> {formatDate(setlist.event_date)}</p>}
           <p className="text-xs text-muted mt-1">{sortedSongs.length} musica{sortedSongs.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -67,7 +67,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             + Musica
           </button>
           <button onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(!showConfirmDelete) }} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs rounded-lg transition-colors">
-            🗑️
+            ️
           </button>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       </div>
                     )}
                     <div className="w-8 h-8 bg-accent/10 text-accent font-bold rounded-lg flex items-center justify-center text-sm flex-shrink-0">{idx + 1}</div>
-                    <button onClick={(e) => { e.stopPropagation(); sessionStorage.setItem('cifrabox_fromSetlist', 'true'); navigate('/player/' + song.id, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); navigate('/player/' + song.id, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="font-semibold text-text truncate">{song.title}</div>
                       <div className="text-xs text-muted truncate">{song.artist}</div>
                     </button>
