@@ -70,13 +70,11 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
 
   const handleSongClick = (songId, e) => {
     e.stopPropagation()
-    // Navega para a música passando que veio do setlist
     navigate(`/player/${songId}`, { state: { from: 'setlist' } })
   }
 
   return (
     <div className="bg-surface border border-border rounded-xl overflow-hidden">
-      {/* Header do Setlist */}
       <div 
         className="p-4 border-b border-border flex items-center justify-between gap-3 cursor-pointer hover:bg-surface2/50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -87,7 +85,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             <p className="text-sm text-muted truncate">{setlist.description}</p>
           )}
           {setlist.event_date && (
-            <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>
+            <p className="text-xs text-accent2 mt-1"> {formatDate(setlist.event_date)}</p>
           )}
           <p className="text-xs text-muted mt-1">
             {sortedSongs.length} música{sortedSongs.length !== 1 ? 's' : ''}
@@ -137,7 +135,6 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
         </div>
       )}
 
-      {/* Lista de Músicas */}
       {isExpanded && (
         <div className="animate-fadeIn">
           {sortedSongs.length === 0 ? (
@@ -151,7 +148,6 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                 if (!song) return null
                 return (
                   <div key={item.id} className="flex items-center gap-2 p-3 hover:bg-surface2 transition-colors">
-                    {/* Botões de mover no mobile */}
                     {isMobile && (
                       <div className="flex flex-col gap-1 flex-shrink-0">
                         <button
@@ -177,12 +173,10 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       </div>
                     )}
 
-                    {/* Número */}
                     <div className="w-8 h-8 bg-accent/10 text-accent font-bold rounded-lg flex items-center justify-center text-sm flex-shrink-0">
                       {idx + 1}
                     </div>
 
-                    {/* Info - USANDO BUTTON EM VEZ DE <a href> */}
                     <button 
                       onClick={(e) => handleSongClick(song.id, e)}
                       className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity"
@@ -191,7 +185,6 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       <div className="text-xs text-muted truncate">{song.artist}</div>
                     </button>
 
-                    {/* Badges */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span className="text-xs font-mono bg-accent/10 text-accent px-2 py-0.5 rounded-full">
                         {song.original_key || 'C'}
@@ -201,7 +194,6 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       </span>
                     </div>
 
-                    {/* Botão remover */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
