@@ -148,7 +148,7 @@ export default function Home() {
         <div className="px-4 py-3 bg-black/60 backdrop-blur-lg">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src="/icon2.png" alt="CifraBox" className="w-16 h-16 md:w-20 md:h-20" />
+              <img src="/icon2.png" alt="CifraBox" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
               <h1 className="text-3xl md:text-4xl font-bold text-purple-400">
                 CifraBox
               </h1>
