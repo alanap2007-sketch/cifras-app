@@ -47,7 +47,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
   const formatDate = (date) => {
     if (!date) return ''
     const [year, month, day] = date.split('-')
-    return `${day}/${month}/${year}`
+    return day + '/' + month + '/' + year
   }
 
   return (
@@ -57,14 +57,14 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
           <h3 className="font-bold text-text text-lg truncate">{setlist.name}</h3>
           {setlist.description && <p className="text-sm text-muted truncate">{setlist.description}</p>}
           {setlist.event_date && <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>}
-          <p className="text-xs text-muted mt-1">{sortedSongs.length} música{sortedSongs.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-muted mt-1">{sortedSongs.length} musica{sortedSongs.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded) }} className="w-10 h-10 bg-surface2 hover:bg-accent/20 text-text rounded-lg transition-colors flex items-center justify-center">
             {isExpanded ? '▲' : '▼'}
           </button>
           <button onClick={(e) => { e.stopPropagation(); setShowAddModal(true) }} className="px-3 py-2 bg-accent hover:bg-accent/90 text-white text-xs font-semibold rounded-lg transition-colors">
-            + Música
+            + Musica
           </button>
           <button onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(!showConfirmDelete) }} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs rounded-lg transition-colors">
             🗑️
@@ -77,7 +77,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
           <span className="text-sm text-red-400">Deletar este setlist?</span>
           <div className="flex gap-2">
             <button onClick={handleDelete} className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg">Sim</button>
-            <button onClick={() => setShowConfirmDelete(false)} className="px-3 py-1 bg-surface2 text-text text-xs rounded-lg">Não</button>
+            <button onClick={() => setShowConfirmDelete(false)} className="px-3 py-1 bg-surface2 text-text text-xs rounded-lg">Nao</button>
           </div>
         </div>
       )}
@@ -85,7 +85,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
       {isExpanded && (
         <div className="animate-fadeIn">
           {sortedSongs.length === 0 ? (
-            <div className="p-6 text-center text-muted text-sm">Nenhuma música adicionada ainda.</div>
+            <div className="p-6 text-center text-muted text-sm">Nenhuma musica adicionada ainda.</div>
           ) : (
             <div className="divide-y divide-border">
               {sortedSongs.map((item, idx) => {
@@ -100,7 +100,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       </div>
                     )}
                     <div className="w-8 h-8 bg-accent/10 text-accent font-bold rounded-lg flex items-center justify-center text-sm flex-shrink-0">{idx + 1}</div>
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/player/${song.id}`, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); navigate('/player/' + song.id, { state: { from: 'setlist' } }) }} className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="font-semibold text-text truncate">{song.title}</div>
                       <div className="text-xs text-muted truncate">{song.artist}</div>
                     </button>
