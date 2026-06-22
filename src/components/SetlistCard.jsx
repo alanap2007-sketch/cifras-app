@@ -80,7 +80,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             <p className="text-sm text-muted truncate">{setlist.description}</p>
           )}
           {setlist.event_date && (
-            <p className="text-xs text-accent2 mt-1"> {formatDate(setlist.event_date)}</p>
+            <p className="text-xs text-accent2 mt-1">📅 {formatDate(setlist.event_date)}</p>
           )}
           <p className="text-xs text-muted mt-1">
             {sortedSongs.length} música{sortedSongs.length !== 1 ? 's' : ''}
@@ -115,7 +115,7 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
             }}
             className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs rounded-lg transition-colors"
           >
-            🗑️
+            ️
           </button>
         </div>
       </div>
@@ -172,7 +172,6 @@ export default function SetlistCard({ setlist, onAdded, onDeleted }) {
                       {idx + 1}
                     </div>
 
-                    {/* ✅ CORRETO: button com navigate, NÃO <a href> */}
                     <button 
                       onClick={(e) => {
                         e.stopPropagation()
