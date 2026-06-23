@@ -147,8 +147,7 @@ export default function Player() {
     const foundSections = []
     lines.forEach((line, index) => {
       const trimmed = line.trim().toLowerCase()
-      const isSection = SECTION_KEYWORDS.some(keyword =>
-        trimmed === keyword || trimmed.startsWith(keyword + ':') || trimmed.startsWith(keyword + ' ') ||
+      const isSection = SECTION_KEYWORDS.some(keyword => trimmed === keyword || trimmed.startsWith(keyword + ':') || trimmed.startsWith(keyword + ' ') ||
         trimmed === '(' + keyword + ')' || trimmed.startsWith('(' + keyword) ||
         trimmed === '[' + keyword + ']' || trimmed.startsWith('[' + keyword)
       )
